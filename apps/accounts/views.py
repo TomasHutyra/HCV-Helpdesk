@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
@@ -18,10 +19,10 @@ class CustomLoginView(LoginView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        # Nastavit jazyk uživatele
-        user = self.request.user
-        translation.activate(user.language)
-        self.request.session[translation.LANGUAGE_SESSION_KEY] = user.language
+        # Nastavit jazyk uživatele přes cookie (Django 4.0+ — LANGUAGE_SESSION_KEY zrušen)
+        lang = self.request.user.language
+        translation.activate(lang)
+        response.set_cookie(settings.LANGUAGE_COOKIE_NAME, lang)
         return response
 
 
@@ -36,10 +37,10 @@ class ProfileView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        # Aktualizovat jazyk po uložení
+        # Aktualizovat jazyk po uložení přes cookie (Django 4.0+)
         lang = form.cleaned_data.get('language', 'cs')
         translation.activate(lang)
-        self.request.session[translation.LANGUAGE_SESSION_KEY] = lang
+        response.set_cookie(settings.LANGUAGE_COOKIE_NAME, lang)
         messages.success(self.request, _('Profil byl uložen.'))
         return response
 
