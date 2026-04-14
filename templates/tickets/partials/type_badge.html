@@ -1,0 +1,9 @@
+{% with t=ticket.type %}
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+  {% if t == 'problem' %}bg-orange-100 text-orange-800
+  {% elif t == 'development' %}bg-indigo-100 text-indigo-800
+  {% elif t == 'improvement' %}bg-teal-100 text-teal-800
+  {% endif %}">
+  {{ ticket.get_type_display }}
+</span>
+{% endwith %}

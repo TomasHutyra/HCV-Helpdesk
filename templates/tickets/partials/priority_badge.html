@@ -1,0 +1,9 @@
+{% with p=ticket.priority %}
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+  {% if p == 'high' %}bg-red-100 text-red-800
+  {% elif p == 'medium' %}bg-amber-100 text-amber-800
+  {% elif p == 'low' %}bg-green-100 text-green-800
+  {% endif %}">
+  {{ ticket.get_priority_display }}
+</span>
+{% endwith %}

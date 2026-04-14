@@ -1,0 +1,28 @@
+{% load i18n %}
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+  <h2 class="text-sm font-semibold text-gray-700 mb-3">{% trans "Záznamy času" %}</h2>
+  {% if time_logs %}
+  <table class="w-full text-sm divide-y divide-gray-100">
+    <thead>
+      <tr class="text-xs text-gray-500">
+        <th class="py-1 text-left">{% trans "Uživatel" %}</th>
+        <th class="py-1 text-left">{% trans "Hodiny" %}</th>
+        <th class="py-1 text-left">{% trans "Poznámka" %}</th>
+        <th class="py-1 text-left">{% trans "Datum" %}</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for log in time_logs %}
+      <tr>
+        <td class="py-1.5">{{ log.user }}</td>
+        <td class="py-1.5 font-medium">{{ log.hours }} h</td>
+        <td class="py-1.5 text-gray-500">{{ log.note|default:'—' }}</td>
+        <td class="py-1.5 text-gray-400">{{ log.created_at|date:"d.m.Y" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-sm text-gray-400">{% trans "Žádné záznamy." %}</p>
+  {% endif %}
+</div>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}HCV Helpdesk{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2uQ8zjIlCkPDc5i8j3NMCNZkfzNuqnAIfUr" crossorigin="anonymous"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .input { @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm; }
+  </style>
+</head>
+<body class="h-full" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+{% if user.is_authenticated %}
+<div class="min-h-full flex flex-col">
+
+  {# Horní navigační lišta #}
+  <nav class="bg-blue-700 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-14">
+        <div class="flex items-center gap-6">
+          <a href="/" class="text-white font-bold text-lg tracking-wide">HCV Helpdesk</a>
+          <div class="hidden sm:flex items-center gap-1">
+            <a href="{% url 'tickets:list' %}" class="text-blue-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+              {% if LANGUAGE_CODE == 'cs' %}Tikety{% else %}Tickets{% endif %}
+            </a>
+            {% if is_manager or is_resolver or is_sales %}
+            <a href="{% url 'stats:dashboard' %}" class="text-blue-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+              {% if LANGUAGE_CODE == 'cs' %}Statistiky{% else %}Statistics{% endif %}
+            </a>
+            {% endif %}
+            {% if is_hcv_admin %}
+            <a href="{% url 'accounts:user_list' %}" class="text-blue-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+              {% if LANGUAGE_CODE == 'cs' %}Uživatelé{% else %}Users{% endif %}
+            </a>
+            <a href="{% url 'accounts:company_list' %}" class="text-blue-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+              {% if LANGUAGE_CODE == 'cs' %}Firmy{% else %}Companies{% endif %}
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          {% if is_requester %}
+          <a href="{% url 'tickets:create' %}" class="bg-white text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-md text-sm font-medium">
+            + {% if LANGUAGE_CODE == 'cs' %}Nový tiket{% else %}New ticket{% endif %}
+          </a>
+          {% endif %}
+          <div x-data="{ open: false }" class="relative">
+            <button @click="open = !open" class="flex items-center gap-2 text-blue-100 hover:text-white text-sm">
+              <span class="hidden sm:block">{{ user }}</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div x-show="open" x-cloak @click.outside="open = false"
+                 class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-100 z-50">
+              <a href="{% url 'accounts:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                {% if LANGUAGE_CODE == 'cs' %}Profil{% else %}Profile{% endif %}
+              </a>
+              <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
+                  {% if LANGUAGE_CODE == 'cs' %}Odhlásit se{% else %}Log out{% endif %}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  {# Flash zprávy #}
+  <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4" id="messages">
+    {% for message in messages %}
+    <div x-data="{ show: true }" x-show="show" x-cloak
+         class="mb-2 flex items-center justify-between rounded-md px-4 py-3 text-sm
+           {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
+           {% elif message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200
+           {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+      <span>{{ message }}</span>
+      <button @click="show = false" class="ml-4 opacity-60 hover:opacity-100">&times;</button>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# Hlavní obsah #}
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+</div>
+{% else %}
+  {% block auth_content %}{% endblock %}
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+K tiketu byl přidán nový komentář.
+
+Tiket #{{ ticket.pk }}: {{ ticket.title }}
+----------------------------------------------
+Autor komentáře: {{ comment.author }}
+
+Komentář:
+{{ comment.body }}
+
+----------------------------------------------
+Pro zobrazení tiketu se přihlaste do systému HCV Helpdesk.

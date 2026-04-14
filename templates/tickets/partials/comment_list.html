@@ -1,0 +1,37 @@
+{% load i18n %}
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+  <h2 class="text-sm font-semibold text-gray-700 mb-4">{% trans "Komentáře" %} ({{ comments.count }})</h2>
+
+  <div class="space-y-4 mb-5">
+    {% for comment in comments %}
+    <div class="flex gap-3">
+      <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+        {{ comment.author.username|first|upper }}
+      </div>
+      <div class="flex-1">
+        <div class="flex items-baseline gap-2">
+          <span class="text-sm font-medium text-gray-900">{{ comment.author }}</span>
+          <span class="text-xs text-gray-400">{{ comment.created_at|date:"d.m.Y H:i" }}</span>
+        </div>
+        <p class="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{{ comment.body }}</p>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-sm text-gray-400">{% trans "Zatím žádné komentáře." %}</p>
+    {% endfor %}
+  </div>
+
+  {# Formulář nového komentáře #}
+  <form method="post" action="{% url 'tickets:add_comment' ticket.pk %}"
+        hx-post="{% url 'tickets:add_comment' ticket.pk %}"
+        hx-target="#comments-section" hx-swap="outerHTML"
+        class="space-y-2">
+    {% csrf_token %}
+    <textarea name="body" rows="3" required
+              placeholder="{% trans 'Napište komentář…' %}"
+              class="block w-full rounded-lg border border-gray-300 text-sm px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"></textarea>
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded-lg font-medium">
+      {% trans "Odeslat komentář" %}
+    </button>
+  </form>
+</div>

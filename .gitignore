@@ -1,0 +1,17 @@
+.env
+.env.local
+.env.production
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+staticfiles/
+media/
+.venv/
+venv/
+node_modules/
+*.mo
+dist/
+build/
+*.egg-info/
+.DS_Store

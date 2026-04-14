@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block auth_content %}
+<div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+  <div class="w-full max-w-md">
+
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-blue-700">HCV Helpdesk</h1>
+      <p class="mt-2 text-gray-500 text-sm">{% trans "Přihlaste se ke svému účtu" %}</p>
+    </div>
+
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-8">
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="bg-red-50 border border-red-200 rounded-md px-4 py-3 text-sm text-red-700">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.username.label }}</label>
+          <input type="text" name="username" value="{{ form.username.value|default:'' }}" autofocus required
+                 class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none">
+          {% if form.username.errors %}<p class="mt-1 text-xs text-red-600">{{ form.username.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.password.label }}</label>
+          <input type="password" name="password" required
+                 class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none">
+          {% if form.password.errors %}<p class="mt-1 text-xs text-red-600">{{ form.password.errors.0 }}</p>{% endif %}
+        </div>
+
+        <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
+          {% trans "Přihlásit se" %}
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

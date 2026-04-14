@@ -1,0 +1,15 @@
+Byl vytvořen nový tiket v systému HCV Helpdesk.
+
+Tiket #{{ ticket.pk }}: {{ ticket.title }}
+----------------------------------------------
+Typ:      {{ ticket.get_type_display }}
+Oblast:   {{ ticket.get_area_display }}
+Priorita: {{ ticket.get_priority_display }}
+Firma:    {{ ticket.company }}
+Žadatel:  {{ ticket.requester }}
+
+Popis:
+{{ ticket.description }}
+
+----------------------------------------------
+Pro zobrazení tiketu se přihlaste do systému HCV Helpdesk.

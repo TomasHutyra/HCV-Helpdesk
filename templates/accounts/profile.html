@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Profil" %} — HCV Helpdesk{% endblock %}
+
+{% block content %}
+<div class="max-w-lg">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">{% trans "Profil" %}</h1>
+
+  <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-6 mb-4">
+    <p class="text-sm text-gray-500 mb-4">
+      {% trans "Uživatelské jméno" %}: <strong>{{ user.username }}</strong><br>
+      {% trans "E-mail" %}: <strong>{{ user.email }}</strong><br>
+      {% if user.company %}{% trans "Firma" %}: <strong>{{ user.company }}</strong>{% endif %}
+    </p>
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {% for field in form %}
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<p class="mt-1 text-xs text-red-600">{{ field.errors.0 }}</p>{% endif %}
+      </div>
+      {% endfor %}
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+        {% trans "Uložit" %}
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

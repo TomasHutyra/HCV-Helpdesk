@@ -1,0 +1,12 @@
+Váš tiket byl {% if closed_as == 'resolved' %}vyřešen{% else %}zamítnut{% endif %}.
+
+Tiket #{{ ticket.pk }}: {{ ticket.title }}
+----------------------------------------------
+Stav: {{ ticket.get_status_display }}
+
+{% if closed_as == 'resolved' %}Způsob vyřešení:
+{{ ticket.resolution_notes }}{% else %}Důvod zamítnutí:
+{{ ticket.rejection_reason }}{% endif %}
+
+----------------------------------------------
+Pro zobrazení tiketu se přihlaste do systému HCV Helpdesk.
