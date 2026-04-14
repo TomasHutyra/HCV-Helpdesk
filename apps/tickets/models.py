@@ -66,7 +66,7 @@ class Ticket(models.Model):
     description = models.TextField(_('popis'))
     area = models.CharField(_('oblast'), max_length=20, choices=AREA_CHOICES, default=AREA_UNKNOWN)
     priority = models.CharField(_('priorita'), max_length=10, choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM)
-    status = FSMField(_('stav'), default=STATUS_NEW, protected=True)
+    status = FSMField(_('stav'), default=STATUS_NEW, protected=True, choices=STATUS_CHOICES)
 
     company = models.ForeignKey(
         'accounts.Company', on_delete=models.PROTECT,
