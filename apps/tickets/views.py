@@ -121,16 +121,28 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
     form_class = TicketCreateForm
     template_name = 'tickets/ticket_form.html'
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         ticket = form.save(commit=False)
         ticket.requester = self.request.user
-        # Firma se bere z profilu žadatele
-        ticket.company = self.request.user.company
-        if not ticket.company:
+        user = self.request.user
+
+        # Správce/admin si vybírají firmu ve formuláři, žadatel má svou
+        if user.has_role(UserRole.MANAGER, UserRole.ADMIN):
+            ticket.company = form.cleaned_data.get('company')
+        else:
+            ticket.company = user.company
+
+        # Bezpečná kontrola bez přístupu přes FK descriptor
+        if not ticket.company_id:
             messages.error(self.request, _('Váš účet nemá přiřazenou firmu. Kontaktujte administrátora.'))
             return self.form_invalid(form)
+
         ticket.save()
-        # Notifikace
         from apps.notifications.tasks import notify_new_ticket
         notify_new_ticket.delay(ticket.pk)
         messages.success(self.request, _('Tiket byl vytvořen.'))

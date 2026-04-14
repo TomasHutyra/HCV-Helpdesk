@@ -8,10 +8,17 @@ class TicketCreateForm(forms.ModelForm):
         model = Ticket
         fields = ('type', 'title', 'description', 'area', 'priority')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        # Žadatel nemůže zadávat „Příprava nabídky" přímo — jen standardní typy
         self.fields['description'].widget = forms.Textarea(attrs={'rows': 5})
+        # Správce a admin si mohou vybrat firmu
+        if user and user.has_role('manager', 'admin'):
+            from apps.accounts.models import Company
+            self.fields['company'] = forms.ModelChoiceField(
+                queryset=Company.objects.all().order_by('name'),
+                label=_('Firma'),
+                empty_label=_('— vyberte firmu —'),
+            )
 
 
 class TicketUpdateForm(forms.ModelForm):
