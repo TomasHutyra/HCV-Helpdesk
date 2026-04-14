@@ -177,7 +177,7 @@
       <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{% trans "Zapsat čas" %}</p>
       <form method="post" action="{% url 'tickets:add_timelog' ticket.pk %}"
             hx-post="{% url 'tickets:add_timelog' ticket.pk %}"
-            hx-target="#timelog-section" hx-swap="outerHTML"
+            hx-target="#timelog-section" hx-swap="innerHTML"
             class="space-y-2">
         {% csrf_token %}
         <input type="number" name="hours" step="0.25" min="0.25" required

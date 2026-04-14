@@ -24,7 +24,7 @@
   {# Formulář nového komentáře #}
   <form method="post" action="{% url 'tickets:add_comment' ticket.pk %}"
         hx-post="{% url 'tickets:add_comment' ticket.pk %}"
-        hx-target="#comments-section" hx-swap="outerHTML"
+        hx-target="#comments-section" hx-swap="innerHTML"
         class="space-y-2">
     {% csrf_token %}
     <textarea name="body" rows="3" required

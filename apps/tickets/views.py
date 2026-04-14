@@ -106,6 +106,8 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         user = self.request.user
         ctx['comment_form'] = CommentForm()
         ctx['timelog_form'] = TimeLogForm()
+        ctx['comments'] = ticket.comments.select_related('author').all()
+        ctx['time_logs'] = ticket.time_logs.select_related('user').all()
         ctx['resolve_form'] = ResolveForm(instance=ticket)
         ctx['reject_form'] = RejectForm(instance=ticket)
         ctx['assign_resolver_form'] = AssignResolverForm(instance=ticket)
@@ -299,10 +301,9 @@ class AddCommentView(LoginRequiredMixin, View):
             from apps.notifications.tasks import notify_new_comment
             notify_new_comment.delay(comment.pk)
             if request.htmx:
-                comments = ticket.comments.select_related('author').all()
                 return render(request, 'tickets/partials/comment_list.html', {
                     'ticket': ticket,
-                    'comments': comments,
+                    'comments': ticket.comments.select_related('author').all(),
                     'comment_form': CommentForm(),
                 })
         return redirect('tickets:detail', pk=pk)
@@ -330,6 +331,5 @@ class AddTimeLogView(LoginRequiredMixin, View):
                 return render(request, 'tickets/partials/timelog_list.html', {
                     'ticket': ticket,
                     'time_logs': ticket.time_logs.select_related('user').all(),
-                    'timelog_form': TimeLogForm(),
                 })
         return redirect('tickets:detail', pk=pk)
