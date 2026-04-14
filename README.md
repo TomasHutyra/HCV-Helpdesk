@@ -51,6 +51,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # 4. Vytvořte konfigurační soubor
+# Windows
+copy .env.example .env
+# Linux / macOS
 cp .env.example .env
 # Otevřete .env a nastavte SECRET_KEY (libovolný dlouhý řetězec)
 ```
@@ -163,6 +166,9 @@ python manage.py compilemessages
 
 ```bash
 # Zkopírujte a upravte produkční .env
+# Windows
+copy .env.example .env.production
+# Linux / macOS
 cp .env.example .env.production
 ```
 
