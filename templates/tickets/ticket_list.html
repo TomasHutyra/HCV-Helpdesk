@@ -21,7 +21,7 @@
     <select name="{{ field.html_name }}"
             class="block w-full rounded-md border-gray-300 text-sm py-1.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
       {% for val, label in field.field.choices %}
-      <option value="{{ val }}" {% if field.value == val %}selected{% endif %}>{{ label }}</option>
+      <option value="{{ val }}" {% if field.value|stringformat:"s" == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
   </div>
@@ -52,6 +52,7 @@
         <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Priorita" %}</th>
         <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Firma" %}</th>
         {% if is_manager %}<th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Řešitel" %}</th>{% endif %}
+        {% if show_hours %}<th class="px-4 py-3 text-right font-medium text-gray-500">{% trans "Hodiny" %}</th>{% endif %}
         <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Vytvořeno" %}</th>
       </tr>
     </thead>
@@ -65,6 +66,7 @@
         <td class="px-4 py-3">{% include 'tickets/partials/priority_badge.html' with ticket=ticket %}</td>
         <td class="px-4 py-3 text-gray-600">{{ ticket.company.name }}</td>
         {% if is_manager %}<td class="px-4 py-3 text-gray-600">{{ ticket.resolver|default:'—' }}</td>{% endif %}
+        {% if show_hours %}<td class="px-4 py-3 text-right text-gray-600 font-medium">{% if ticket.hours_sum %}{{ ticket.hours_sum }} h{% else %}—{% endif %}</td>{% endif %}
         <td class="px-4 py-3 text-gray-400 whitespace-nowrap">{{ ticket.created_at|date:"d.m.Y" }}</td>
       </tr>
       {% empty %}

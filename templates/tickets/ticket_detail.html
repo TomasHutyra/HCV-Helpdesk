@@ -160,7 +160,8 @@
                   placeholder="{% trans 'Způsob vyřešení…' %}"
                   class="block w-full rounded-md border-gray-300 text-sm"></textarea>
         <input type="number" name="hours" step="0.25" min="0.25"
-               placeholder="{% trans 'Hodiny (volitelné)' %}"
+               {% if not has_timelogs %}required{% endif %}
+               placeholder="{% if not has_timelogs %}{% trans 'Hodiny (povinné)' %}{% else %}{% trans 'Hodiny (volitelné)' %}{% endif %}"
                class="block w-full rounded-md border-gray-300 text-sm">
         <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm py-1.5 rounded-lg font-medium">{% trans "Označit jako vyřešeno" %}</button>
       </form>

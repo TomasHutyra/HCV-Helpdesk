@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as db_models
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
@@ -69,7 +69,7 @@ class TicketListView(LoginRequiredMixin, ListView):
             qs = qs.none()
 
         # Filtrování z formuláře
-        form = TicketFilterForm(self.request.GET)
+        form = TicketFilterForm(self.request.GET, user=user)
         if form.is_valid():
             if form.cleaned_data.get('status'):
                 qs = qs.filter(status=form.cleaned_data['status'])
@@ -79,17 +79,29 @@ class TicketListView(LoginRequiredMixin, ListView):
                 qs = qs.filter(area=form.cleaned_data['area'])
             if form.cleaned_data.get('priority'):
                 qs = qs.filter(priority=form.cleaned_data['priority'])
+            if form.cleaned_data.get('company'):
+                qs = qs.filter(company=form.cleaned_data['company'])
+            if form.cleaned_data.get('requester'):
+                qs = qs.filter(requester=form.cleaned_data['requester'])
+            if form.cleaned_data.get('resolver'):
+                qs = qs.filter(resolver=form.cleaned_data['resolver'])
             if form.cleaned_data.get('search'):
                 q = form.cleaned_data['search']
                 qs = qs.filter(
                     db_models.Q(title__icontains=q) | db_models.Q(description__icontains=q)
                 )
 
+        if user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN):
+            qs = qs.annotate(hours_sum=db_models.Sum('time_logs__hours'))
+
         return qs.order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['filter_form'] = TicketFilterForm(self.request.GET)
+        ctx['filter_form'] = TicketFilterForm(self.request.GET, user=self.request.user)
+        ctx['show_hours'] = self.request.user.has_role(
+            UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN
+        )
         return ctx
 
 
@@ -115,6 +127,9 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
     def get(self, request, *args, **kwargs):
         try:
             return super().get(request, *args, **kwargs)
+        except Http404:
+            messages.error(request, _('Tiket neexistuje.'))
+            return redirect('tickets:list')
         except PermissionError:
             return redirect('tickets:list')
 
@@ -133,6 +148,7 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         ctx['change_type_form'] = ChangeTypeForm(instance=ticket)
         ctx['can_edit'] = _can_edit_ticket(user, ticket)
         ctx['show_hours'] = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
+        ctx['has_timelogs'] = ticket.time_logs.exists()
         prev_pk, next_pk = _get_adjacent_tickets(user, ticket)
         ctx['prev_ticket_pk'] = prev_pk
         ctx['next_ticket_pk'] = next_pk
@@ -259,10 +275,13 @@ class ResolveView(LoginRequiredMixin, View):
             return redirect('tickets:detail', pk=pk)
         form = ResolveForm(request.POST, instance=ticket)
         if form.is_valid():
+            hours_str = request.POST.get('hours', '').strip()
+            if not hours_str and not ticket.time_logs.exists():
+                messages.error(request, _('Zadejte počet odpracovaných hodin.'))
+                return redirect('tickets:detail', pk=pk)
             ticket = form.save(commit=False)
             ticket.to_resolved()
             ticket.save()
-            hours_str = request.POST.get('hours', '').strip()
             if hours_str:
                 try:
                     hours = float(hours_str)

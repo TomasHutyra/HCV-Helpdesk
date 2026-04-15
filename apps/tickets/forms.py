@@ -135,4 +135,27 @@ class TicketFilterForm(forms.Form):
         choices=[('', _('— vše —'))] + Ticket.PRIORITY_CHOICES,
         required=False, label=_('Priorita'),
     )
-    search = forms.CharField(required=False, label=_('Hledat'))
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user and user.has_role('manager', 'admin'):
+            from apps.accounts.models import Company, User, UserRole
+            self.fields['company'] = forms.ModelChoiceField(
+                queryset=Company.objects.order_by('name'),
+                required=False, label=_('Firma'),
+                empty_label=_('— vše —'),
+            )
+            self.fields['requester'] = forms.ModelChoiceField(
+                queryset=User.objects.filter(
+                    user_roles__role=UserRole.REQUESTER
+                ).distinct().order_by('last_name', 'first_name'),
+                required=False, label=_('Žadatel'),
+                empty_label=_('— vše —'),
+            )
+            self.fields['resolver'] = forms.ModelChoiceField(
+                queryset=User.objects.filter(
+                    user_roles__role=UserRole.RESOLVER
+                ).distinct().order_by('last_name', 'first_name'),
+                required=False, label=_('Řešitel'),
+                empty_label=_('— vše —'),
+            )
