@@ -74,6 +74,16 @@ def send_new_comment(comment):
     )
 
 
+def send_assigned_to_you(ticket, assignee):
+    """Přiřazení řešitele nebo obchodníka → notifikace přiřazené osobě."""
+    _send(
+        subject=f'[HCV Helpdesk] Byl vám přiřazen tiket #{ticket.pk}: {ticket.title}',
+        template='emails/assigned_to_you.txt',
+        context={'ticket': ticket},
+        recipients=[assignee.email],
+    )
+
+
 def send_ticket_closed(ticket, closed_as):
     """Vyřešení nebo zamítnutí → žadateli."""
     _send(

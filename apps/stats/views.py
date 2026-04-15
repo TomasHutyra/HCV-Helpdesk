@@ -85,15 +85,16 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         else:
             next_year, next_month = year, month + 1
 
+        month_names = [
+            '', 'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
+            'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec',
+        ]
         ctx.update({
             'year': year,
             'month': month,
+            'month_name': month_names[month],
             'prev_year': prev_year, 'prev_month': prev_month,
             'next_year': next_year, 'next_month': next_month,
-            'month_names': [
-                '', 'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
-                'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec',
-            ],
         })
 
         user = self.request.user

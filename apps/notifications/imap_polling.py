@@ -102,11 +102,11 @@ def process_inbox():
             if requester is None:
                 logger.warning('Neznámý odesílatel: %s — tiket nevytvořen.', from_email)
                 # Přesto označit jako přečtený, aby se znovu nezpracoval
-                server.set_flags(uid, [imapclient.SEEN])
+                server.add_flags(uid, [imapclient.SEEN])
                 continue
 
             _create_ticket_from_email(subject, body, requester)
-            server.set_flags(uid, [imapclient.SEEN])
+            server.add_flags(uid, [imapclient.SEEN])
 
         server.logout()
 

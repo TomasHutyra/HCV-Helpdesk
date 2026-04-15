@@ -1,0 +1,1 @@
+.venv\Scripts\activate & python manage.py poll_inbox

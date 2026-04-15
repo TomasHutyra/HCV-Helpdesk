@@ -10,9 +10,6 @@ DATABASES = {
     }
 }
 
-# E-maily se zobrazují v konzoli (nevyžaduje SMTP)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
 # Celery tasky běží synchronně — nevyžaduje Redis
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True

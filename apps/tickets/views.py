@@ -189,8 +189,9 @@ class AssignResolverView(LoginRequiredMixin, View):
             ticket = form.save(commit=False)
             ticket.to_in_progress()
             ticket.save()
-            from apps.notifications.tasks import notify_status_change
+            from apps.notifications.tasks import notify_status_change, notify_assigned_to_resolver
             notify_status_change.delay(ticket.pk)
+            notify_assigned_to_resolver.delay(ticket.pk)
             messages.success(request, _('Řešitel byl přiřazen.'))
         return redirect('tickets:detail', pk=pk)
 
@@ -208,8 +209,9 @@ class AssignSalesView(LoginRequiredMixin, View):
             ticket = form.save(commit=False)
             ticket.to_offer_prep()
             ticket.save()
-            from apps.notifications.tasks import notify_status_change
+            from apps.notifications.tasks import notify_status_change, notify_assigned_to_sales
             notify_status_change.delay(ticket.pk)
+            notify_assigned_to_sales.delay(ticket.pk)
             messages.success(request, _('Obchodník byl přiřazen.'))
         return redirect('tickets:detail', pk=pk)
 

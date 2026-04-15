@@ -9,9 +9,7 @@
   {# Navigace měsíců #}
   <div class="flex items-center gap-3 text-sm">
     <a href="?year={{ prev_year }}&month={{ prev_month }}" class="px-3 py-1.5 rounded-lg border hover:bg-gray-50">←</a>
-    <span class="font-semibold text-gray-700">{{ month_names|slice:":"|join:'' }}{% with month_names|slice:month as mn %}{{ month_names.month }}{% endwith %}
-    {# Jednodušší zobrazení #}
-    {{ month }}/{{ year }}</span>
+    <span class="font-semibold text-gray-700">{{ month_name }} {{ year }}</span>
     <a href="?year={{ next_year }}&month={{ next_month }}" class="px-3 py-1.5 rounded-lg border hover:bg-gray-50">→</a>
   </div>
 </div>

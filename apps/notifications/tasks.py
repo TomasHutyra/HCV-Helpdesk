@@ -35,6 +35,30 @@ def notify_new_comment(comment_pk):
 
 
 @shared_task
+def notify_assigned_to_resolver(ticket_pk):
+    from apps.tickets.models import Ticket
+    from .email import send_assigned_to_you
+    try:
+        ticket = Ticket.objects.select_related('resolver').get(pk=ticket_pk)
+        if ticket.resolver:
+            send_assigned_to_you(ticket, ticket.resolver)
+    except Ticket.DoesNotExist:
+        pass
+
+
+@shared_task
+def notify_assigned_to_sales(ticket_pk):
+    from apps.tickets.models import Ticket
+    from .email import send_assigned_to_you
+    try:
+        ticket = Ticket.objects.select_related('sales').get(pk=ticket_pk)
+        if ticket.sales:
+            send_assigned_to_you(ticket, ticket.sales)
+    except Ticket.DoesNotExist:
+        pass
+
+
+@shared_task
 def notify_ticket_closed(ticket_pk, closed_as):
     from apps.tickets.models import Ticket
     from .email import send_ticket_closed
