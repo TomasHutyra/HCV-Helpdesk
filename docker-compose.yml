@@ -68,6 +68,7 @@ services:
     environment:
       DATABASE_URL: postgres://helpdesk:${POSTGRES_PASSWORD:-changeme}@db:5432/hcv_helpdesk
       CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
 
   nginx:
     image: nginx:alpine
