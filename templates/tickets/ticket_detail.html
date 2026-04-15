@@ -4,10 +4,24 @@
 {% block title %}#{{ ticket.pk }} {{ ticket.title }} — HCV Helpdesk{% endblock %}
 
 {% block content %}
-<div class="mb-4 flex items-center gap-2 text-sm">
-  <a href="{% url 'tickets:list' %}" class="text-blue-600 hover:underline">{% trans "Tikety" %}</a>
-  <span class="text-gray-400">/</span>
-  <span class="text-gray-700">#{{ ticket.pk }}</span>
+<div class="mb-4 flex items-center justify-between text-sm">
+  <div class="flex items-center gap-2">
+    <a href="{% url 'tickets:list' %}" class="text-blue-600 hover:underline">{% trans "Tikety" %}</a>
+    <span class="text-gray-400">/</span>
+    <span class="text-gray-700">#{{ ticket.pk }}</span>
+  </div>
+  <div class="flex items-center gap-1">
+    {% if prev_ticket_pk %}
+    <a href="{% url 'tickets:detail' prev_ticket_pk %}" class="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 text-gray-600" title="#{{ prev_ticket_pk }}">←</a>
+    {% else %}
+    <span class="px-2 py-1 rounded border border-gray-100 text-gray-300">←</span>
+    {% endif %}
+    {% if next_ticket_pk %}
+    <a href="{% url 'tickets:detail' next_ticket_pk %}" class="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 text-gray-600" title="#{{ next_ticket_pk }}">→</a>
+    {% else %}
+    <span class="px-2 py-1 rounded border border-gray-100 text-gray-300">→</span>
+    {% endif %}
+  </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

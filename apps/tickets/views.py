@@ -17,6 +17,24 @@ from .forms import (
 from .models import Ticket, Comment, TimeLog
 
 
+def _get_adjacent_tickets(user, ticket):
+    """Vrátí (prev_pk, next_pk) — sousední tikety ve stejném pořadí jako seznam (dle PK)."""
+    qs = Ticket.objects.all()
+    if user.has_role(UserRole.MANAGER, UserRole.ADMIN):
+        pass
+    elif user.has_role(UserRole.RESOLVER):
+        qs = qs.filter(resolver=user)
+    elif user.has_role(UserRole.SALES):
+        qs = qs.filter(sales=user)
+    elif user.has_role(UserRole.REQUESTER):
+        qs = qs.filter(requester=user)
+    else:
+        return None, None
+    prev_pk = qs.filter(pk__lt=ticket.pk).order_by('-pk').values_list('pk', flat=True).first()
+    next_pk = qs.filter(pk__gt=ticket.pk).order_by('pk').values_list('pk', flat=True).first()
+    return prev_pk, next_pk
+
+
 def _can_edit_ticket(user, ticket):
     """Může uživatel editovat tiket (tj. není v uzamčeném stavu)?"""
     if ticket.is_locked:
@@ -115,6 +133,9 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         ctx['change_type_form'] = ChangeTypeForm(instance=ticket)
         ctx['can_edit'] = _can_edit_ticket(user, ticket)
         ctx['show_hours'] = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
+        prev_pk, next_pk = _get_adjacent_tickets(user, ticket)
+        ctx['prev_ticket_pk'] = prev_pk
+        ctx['next_ticket_pk'] = next_pk
         return ctx
 
 
