@@ -21,9 +21,5 @@ for i in range(30):
 echo "Migrace..."
 python manage.py migrate --settings=helpdesk.settings.production
 
-echo "Spouštím server..."
-exec gunicorn helpdesk.wsgi:application \
-    --bind 0.0.0.0:8000 \
-    --workers 3 \
-    --timeout 120 \
-    --access-logfile -
+echo "Spouštím $@..."
+exec "$@"
