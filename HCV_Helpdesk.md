@@ -75,7 +75,16 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
   - Rozděluje a vyhodnocuje práci
 
-  - Vidí všechny požadavky
+  - Může mít nastavenou oblast (IT nebo Helios) a/nebo seznam firem.
+    Pokud nemá nastaveno nic, vidí a spravuje všechny požadavky.
+    Pokud má nastavenou oblast, vidí pouze požadavky dané oblasti.
+    Pokud má nastaveny firmy, vidí pouze požadavky daných firem.
+    Pokud má nastaveno obojí, vidí požadavky splňující zároveň oblast
+    i jednu z firem.
+    Oblast „Neznámá" nastavená správci se chová jako žádné omezení oblasti.
+
+  - Požadavky s oblastí „Neznámá" projdou oblast-filtrem u všech správců
+    (rozhoduje pouze omezení firem).
 
   - Může přiřadit řešitele a obchodníka požadavku
 
@@ -93,7 +102,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
   - Vidí veškeré statistiky za období (měsíc) -- statistiky uživatelů,
     přehledy pro jednotlivé firmy (počet požadavků, počet otevřených
-    požadavků, čas strávený na požadavcích)
+    požadavků, čas strávený na požadavcích) v rámci svého omezení
 
 - Administrátor
 
@@ -212,9 +221,18 @@ volitelné.
 
 ### Notifikace
 
-Pokud je založen nový požadavek, přijde žadateli a všem správcům
-notifikační e-mail obsahující Typ požadavku, Název, Popis, Oblast a
-Prioritu.
+Pokud je založen nový požadavek, přijde žadateli a správcům, kteří
+mají na daný požadavek přístup (viz omezení správce), notifikační e-mail
+obsahující Typ požadavku, Název, Popis, Oblast a Prioritu.
+
+Pravidla pro výběr správců při notifikaci o novém požadavku:
+
+- Pokud má požadavek oblast „Neznámá", dostane notifikaci každý správce,
+  jehož omezení firem zahrnuje firmu požadavku nebo nemá nastaveno žádné
+  omezení firem (oblast-filtr je u tiketu s oblastí „Neznámá" přeskočen).
+
+- Pokud správce nemá nastaveno žádné omezení (ani oblast, ani firmy),
+  dostane notifikaci vždy.
 
 Pokud se změní stav požadavku na „Řeší se" nebo „Příprava nabídky",
 přijde žadateli notifikační e-mail obsahující Název a nový stav.

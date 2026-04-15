@@ -14,7 +14,7 @@ class UserAdmin(BaseUserAdmin):
     list_display = ('username', 'email', 'get_full_name', 'company', 'is_active')
     list_filter = ('is_active', 'user_roles__role', 'company')
     fieldsets = BaseUserAdmin.fieldsets + (
-        ('HCV Helpdesk', {'fields': ('company', 'language')}),
+        ('HCV Helpdesk', {'fields': ('company', 'language', 'managed_area', 'managed_companies')}),
     )
 
 

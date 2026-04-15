@@ -20,8 +20,12 @@ from .models import Ticket, Comment, TimeLog
 def _get_adjacent_tickets(user, ticket):
     """Vrátí (prev_pk, next_pk) — sousední tikety ve stejném pořadí jako seznam (dle PK)."""
     qs = Ticket.objects.all()
-    if user.has_role(UserRole.MANAGER, UserRole.ADMIN):
-        pass
+    if user.has_role(UserRole.ADMIN):
+        pass  # Admin vidí vše
+    elif user.has_role(UserRole.MANAGER):
+        q = user.get_ticket_visibility_q()
+        if q is not None:
+            qs = qs.filter(q)
     elif user.has_role(UserRole.RESOLVER):
         qs = qs.filter(resolver=user)
     elif user.has_role(UserRole.SALES):
@@ -57,8 +61,12 @@ class TicketListView(LoginRequiredMixin, ListView):
         qs = Ticket.objects.select_related('requester', 'resolver', 'sales', 'company')
 
         # Filtrování podle role
-        if user.has_role(UserRole.MANAGER, UserRole.ADMIN):
-            pass  # Správce a admin vidí vše
+        if user.has_role(UserRole.ADMIN):
+            pass  # Admin vidí vše
+        elif user.has_role(UserRole.MANAGER):
+            q = user.get_ticket_visibility_q()
+            if q is not None:
+                qs = qs.filter(q)
         elif user.has_role(UserRole.RESOLVER):
             qs = qs.filter(resolver=user)
         elif user.has_role(UserRole.SALES):
@@ -113,8 +121,13 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         ticket = get_object_or_404(Ticket, pk=self.kwargs['pk'])
         user = self.request.user
         # Kontrola přístupu
-        if user.has_role(UserRole.MANAGER, UserRole.ADMIN):
+        if user.has_role(UserRole.ADMIN):
             return ticket
+        if user.has_role(UserRole.MANAGER):
+            if user.can_see_ticket_as_manager(ticket):
+                return ticket
+            messages.error(self.request, _('Nemáte přístup k tomuto tiketu.'))
+            raise PermissionError()
         if user.has_role(UserRole.RESOLVER) and ticket.resolver == user:
             return ticket
         if user.has_role(UserRole.SALES) and ticket.sales == user:

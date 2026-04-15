@@ -28,14 +28,21 @@ def _send(subject, template, context, recipients):
         logger.error('Chyba při odesílání e-mailu "%s": %s', subject, exc)
 
 
-def send_new_ticket(ticket):
-    """Nový tiket → žadateli + všem správcům."""
+def _get_notifiable_managers(ticket):
+    """
+    Vrátí seznam e-mailů správců, kteří mají dostat notifikaci o tiketu,
+    s respektováním jejich omezení na oblast a firmy.
+    """
     from apps.accounts.models import User, UserRole
+    managers = User.objects.filter(
+        user_roles__role=UserRole.MANAGER, is_active=True
+    ).prefetch_related('managed_companies')
+    return [m.email for m in managers if m.can_see_ticket_as_manager(ticket)]
 
-    managers = list(
-        User.objects.filter(user_roles__role=UserRole.MANAGER, is_active=True)
-        .values_list('email', flat=True)
-    )
+
+def send_new_ticket(ticket):
+    """Nový tiket → žadateli + oprávněným správcům."""
+    managers = _get_notifiable_managers(ticket)
     recipients = list({ticket.requester.email} | set(managers))
 
     _send(
