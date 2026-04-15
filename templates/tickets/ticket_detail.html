@@ -84,7 +84,7 @@
       <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{% trans "Správce — akce" %}</p>
 
       {# Přiřadit řešitele #}
-      {% if ticket.status == 'new' or ticket.status == 'offer_prep' %}
+      {% if ticket.status == 'new' or ticket.status == 'offer_prep' or ticket.status == 'in_progress' %}
       <details class="group">
         <summary class="cursor-pointer text-sm font-medium text-blue-700 hover:underline list-none flex items-center gap-1">
           ▸ {% trans "Přiřadit řešitele" %}
@@ -102,7 +102,7 @@
       {% endif %}
 
       {# Přiřadit obchodníka #}
-      {% if ticket.type == 'development' and ticket.status == 'new' %}
+      {% if ticket.type == 'development' and ticket.status == 'new' or ticket.type == 'development' and ticket.status == 'offer_prep' %}
       <details class="group">
         <summary class="cursor-pointer text-sm font-medium text-purple-700 hover:underline list-none flex items-center gap-1">
           ▸ {% trans "Přiřadit obchodníka" %}
@@ -145,6 +145,9 @@
         <textarea name="resolution_notes" rows="4" required
                   placeholder="{% trans 'Způsob vyřešení…' %}"
                   class="block w-full rounded-md border-gray-300 text-sm"></textarea>
+        <input type="number" name="hours" step="0.25" min="0.25"
+               placeholder="{% trans 'Hodiny (volitelné)' %}"
+               class="block w-full rounded-md border-gray-300 text-sm">
         <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm py-1.5 rounded-lg font-medium">{% trans "Označit jako vyřešeno" %}</button>
       </form>
     </div>
@@ -172,7 +175,7 @@
 
     {# Zápis času #}
     {% if show_hours and not ticket.is_locked %}
-    {% if is_manager or is_resolver and ticket.resolver == request.user or is_sales and ticket.sales == request.user %}
+    {% if ticket.resolver == request.user or ticket.sales == request.user %}
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5" id="timelog-form-panel">
       <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{% trans "Zapsat čas" %}</p>
       <form method="post" action="{% url 'tickets:add_timelog' ticket.pk %}"

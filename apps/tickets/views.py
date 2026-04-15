@@ -114,7 +114,7 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         ctx['assign_sales_form'] = AssignSalesForm(instance=ticket)
         ctx['change_type_form'] = ChangeTypeForm(instance=ticket)
         ctx['can_edit'] = _can_edit_ticket(user, ticket)
-        ctx['show_hours'] = not user.has_role(UserRole.REQUESTER)
+        ctx['show_hours'] = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
         return ctx
 
 
@@ -187,11 +187,16 @@ class AssignResolverView(LoginRequiredMixin, View):
         form = AssignResolverForm(request.POST, instance=ticket)
         if form.is_valid():
             ticket = form.save(commit=False)
-            ticket.to_in_progress()
-            ticket.save()
-            from apps.notifications.tasks import notify_status_change, notify_assigned_to_resolver
-            notify_status_change.delay(ticket.pk)
-            notify_assigned_to_resolver.delay(ticket.pk)
+            if ticket.status in (Ticket.STATUS_NEW, Ticket.STATUS_OFFER):
+                ticket.to_in_progress()
+                ticket.save()
+                from apps.notifications.tasks import notify_status_change, notify_assigned_to_resolver
+                notify_status_change.delay(ticket.pk)
+                notify_assigned_to_resolver.delay(ticket.pk)
+            elif ticket.status == Ticket.STATUS_IN_PROGRESS:
+                ticket.save()
+                from apps.notifications.tasks import notify_assigned_to_resolver
+                notify_assigned_to_resolver.delay(ticket.pk)
             messages.success(request, _('Řešitel byl přiřazen.'))
         return redirect('tickets:detail', pk=pk)
 
@@ -207,11 +212,16 @@ class AssignSalesView(LoginRequiredMixin, View):
         form = AssignSalesForm(request.POST, instance=ticket)
         if form.is_valid():
             ticket = form.save(commit=False)
-            ticket.to_offer_prep()
-            ticket.save()
-            from apps.notifications.tasks import notify_status_change, notify_assigned_to_sales
-            notify_status_change.delay(ticket.pk)
-            notify_assigned_to_sales.delay(ticket.pk)
+            if ticket.status == Ticket.STATUS_NEW:
+                ticket.to_offer_prep()
+                ticket.save()
+                from apps.notifications.tasks import notify_status_change, notify_assigned_to_sales
+                notify_status_change.delay(ticket.pk)
+                notify_assigned_to_sales.delay(ticket.pk)
+            elif ticket.status == Ticket.STATUS_OFFER:
+                ticket.save()
+                from apps.notifications.tasks import notify_assigned_to_sales
+                notify_assigned_to_sales.delay(ticket.pk)
             messages.success(request, _('Obchodník byl přiřazen.'))
         return redirect('tickets:detail', pk=pk)
 
@@ -231,6 +241,15 @@ class ResolveView(LoginRequiredMixin, View):
             ticket = form.save(commit=False)
             ticket.to_resolved()
             ticket.save()
+            hours_str = request.POST.get('hours', '').strip()
+            if hours_str:
+                try:
+                    hours = float(hours_str)
+                    if hours > 0:
+                        timelog_user = ticket.resolver if ticket.resolver_id else request.user
+                        TimeLog.objects.create(ticket=ticket, user=timelog_user, hours=hours)
+                except ValueError:
+                    pass
             from apps.notifications.tasks import notify_ticket_closed
             notify_ticket_closed.delay(ticket.pk, closed_as='resolved')
             messages.success(request, _('Tiket byl vyřešen.'))
