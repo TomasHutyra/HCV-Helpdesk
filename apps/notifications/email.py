@@ -10,6 +10,11 @@ from django.template.loader import render_to_string
 logger = logging.getLogger(__name__)
 
 
+def _sanitize_subject(subject):
+    """Odstraní znaky nového řádku z předmětu e-mailu (prevence header injection)."""
+    return subject.replace('\r', '').replace('\n', ' ')
+
+
 def _send(subject, template, context, recipients):
     """Odešle e-mail na seznam příjemců. Chyby loguje, ale nevyhazuje výjimku."""
     if not recipients:
@@ -46,7 +51,7 @@ def send_new_ticket(ticket):
     recipients = list({ticket.requester.email} | set(managers))
 
     _send(
-        subject=f'[HCV Helpdesk] Nový tiket #{ticket.pk}: {ticket.title}',
+        subject=_sanitize_subject(f'[HCV Helpdesk] Nový tiket #{ticket.pk}: {ticket.title}'),
         template='emails/new_ticket.txt',
         context={'ticket': ticket},
         recipients=recipients,
@@ -74,7 +79,7 @@ def send_new_comment(comment):
     recipients_set.discard(comment.author.email)
 
     _send(
-        subject=f'[HCV Helpdesk] Nový komentář k tiketu #{ticket.pk}: {ticket.title}',
+        subject=_sanitize_subject(f'[HCV Helpdesk] Nový komentář k tiketu #{ticket.pk}: {ticket.title}'),
         template='emails/new_comment.txt',
         context={'ticket': ticket, 'comment': comment},
         recipients=list(recipients_set),
@@ -84,7 +89,7 @@ def send_new_comment(comment):
 def send_assigned_to_you(ticket, assignee):
     """Přiřazení řešitele nebo obchodníka → notifikace přiřazené osobě."""
     _send(
-        subject=f'[HCV Helpdesk] Byl vám přiřazen tiket #{ticket.pk}: {ticket.title}',
+        subject=_sanitize_subject(f'[HCV Helpdesk] Byl vám přiřazen tiket #{ticket.pk}: {ticket.title}'),
         template='emails/assigned_to_you.txt',
         context={'ticket': ticket},
         recipients=[assignee.email],
@@ -94,7 +99,7 @@ def send_assigned_to_you(ticket, assignee):
 def send_ticket_closed(ticket, closed_as):
     """Vyřešení nebo zamítnutí → žadateli."""
     _send(
-        subject=f'[HCV Helpdesk] Tiket #{ticket.pk} {ticket.get_status_display()}: {ticket.title}',
+        subject=_sanitize_subject(f'[HCV Helpdesk] Tiket #{ticket.pk} {ticket.get_status_display()}: {ticket.title}'),
         template='emails/ticket_closed.txt',
         context={'ticket': ticket, 'closed_as': closed_as},
         recipients=[ticket.requester.email],

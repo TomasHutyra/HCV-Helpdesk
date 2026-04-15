@@ -17,6 +17,10 @@ SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
+# Session — platnost 8 hodin, konec po zavření prohlížeče
+SESSION_COOKIE_AGE = 28800
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 # Logování chyb
 LOGGING = {
     'version': 1,

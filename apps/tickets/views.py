@@ -43,10 +43,21 @@ def _can_edit_ticket(user, ticket):
     """Může uživatel editovat tiket (tj. není v uzamčeném stavu)?"""
     if ticket.is_locked:
         return False
-    if user.has_role(UserRole.MANAGER):
+    if user.has_role(UserRole.ADMIN):
         return True
+    if user.has_role(UserRole.MANAGER):
+        return user.can_see_ticket_as_manager(ticket)
     if user.has_role(UserRole.RESOLVER) and ticket.resolver == user:
         return True
+    return False
+
+
+def _manager_has_ticket_access(user, ticket):
+    """Vrátí True, pokud je uživatel správce (nebo admin) a smí přistoupit k tiketu."""
+    if user.has_role(UserRole.ADMIN):
+        return True
+    if user.has_role(UserRole.MANAGER):
+        return user.can_see_ticket_as_manager(ticket)
     return False
 
 
@@ -232,7 +243,7 @@ class TicketUpdateView(LoginRequiredMixin, UpdateView):
 class AssignResolverView(LoginRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk)
-        if not request.user.has_role(UserRole.MANAGER):
+        if not _manager_has_ticket_access(request.user, ticket):
             return HttpResponse(_('Nedostatečná oprávnění.'), status=403)
         form = AssignResolverForm(request.POST, instance=ticket)
         if form.is_valid():
@@ -254,7 +265,7 @@ class AssignResolverView(LoginRequiredMixin, View):
 class AssignSalesView(LoginRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk)
-        if not request.user.has_role(UserRole.MANAGER):
+        if not _manager_has_ticket_access(request.user, ticket):
             return HttpResponse(_('Nedostatečná oprávnění.'), status=403)
         if ticket.type != Ticket.TYPE_DEVELOPMENT:
             messages.error(request, _('Obchodníka lze přiřadit pouze k typu „Požadavek na vývoj".'))
@@ -280,7 +291,7 @@ class ResolveView(LoginRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk)
         can_resolve = (
-            request.user.has_role(UserRole.MANAGER) or
+            _manager_has_ticket_access(request.user, ticket) or
             (request.user.has_role(UserRole.RESOLVER) and ticket.resolver == request.user)
         )
         if not can_resolve:
@@ -314,7 +325,7 @@ class ResolveView(LoginRequiredMixin, View):
 class RejectView(LoginRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk)
-        if not request.user.has_role(UserRole.MANAGER):
+        if not _manager_has_ticket_access(request.user, ticket):
             messages.error(request, _('Nedostatečná oprávnění.'))
             return redirect('tickets:detail', pk=pk)
         form = RejectForm(request.POST, instance=ticket)
@@ -333,7 +344,7 @@ class RejectView(LoginRequiredMixin, View):
 class ReopenView(LoginRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk)
-        if not request.user.has_role(UserRole.MANAGER):
+        if not _manager_has_ticket_access(request.user, ticket):
             messages.error(request, _('Nedostatečná oprávnění.'))
             return redirect('tickets:detail', pk=pk)
         target = request.POST.get('target', 'in_progress')
@@ -349,7 +360,11 @@ class ReopenView(LoginRequiredMixin, View):
 class ChangeTypeView(LoginRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk)
-        if not request.user.has_role(UserRole.MANAGER, UserRole.RESOLVER):
+        can_change_type = (
+            _manager_has_ticket_access(request.user, ticket) or
+            (request.user.has_role(UserRole.RESOLVER) and ticket.resolver == request.user)
+        )
+        if not can_change_type:
             messages.error(request, _('Nedostatečná oprávnění.'))
             return redirect('tickets:detail', pk=pk)
         form = ChangeTypeForm(request.POST, instance=ticket)
@@ -362,10 +377,23 @@ class ChangeTypeView(LoginRequiredMixin, View):
 class AddCommentView(LoginRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk)
-        # Žadatel může komentovat jen svoje tikety
-        if request.user.has_role(UserRole.REQUESTER) and ticket.requester != request.user:
+        user = request.user
+        # Každá role smí komentovat pouze tikety, ke kterým má přístup
+        if user.has_role(UserRole.ADMIN):
+            can_comment = True
+        elif user.has_role(UserRole.MANAGER):
+            can_comment = user.can_see_ticket_as_manager(ticket)
+        elif user.has_role(UserRole.RESOLVER):
+            can_comment = ticket.resolver == user
+        elif user.has_role(UserRole.SALES):
+            can_comment = ticket.sales == user
+        elif user.has_role(UserRole.REQUESTER):
+            can_comment = ticket.requester == user
+        else:
+            can_comment = False
+        if not can_comment:
             messages.error(request, _('Nemáte oprávnění komentovat tento tiket.'))
-            return redirect('tickets:detail', pk=pk)
+            return redirect('tickets:list')
         form = CommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
@@ -386,10 +414,12 @@ class AddCommentView(LoginRequiredMixin, View):
 class AddTimeLogView(LoginRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk)
+        user = request.user
+        # Správce smí zapisovat čas jen pokud je zároveň přiřazen jako řešitel nebo obchodník
         can_log = (
-            request.user.has_role(UserRole.MANAGER) or
-            (request.user.has_role(UserRole.RESOLVER) and ticket.resolver == request.user) or
-            (request.user.has_role(UserRole.SALES) and ticket.sales == request.user)
+            (user.has_role(UserRole.MANAGER) and (ticket.resolver == user or ticket.sales == user)) or
+            (user.has_role(UserRole.RESOLVER) and ticket.resolver == user) or
+            (user.has_role(UserRole.SALES) and ticket.sales == user)
         )
         if not can_log:
             messages.error(request, _('Nemáte oprávnění zapisovat čas.'))
