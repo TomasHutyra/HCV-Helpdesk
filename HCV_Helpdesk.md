@@ -114,6 +114,41 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
   - Přiřazuje žadatele k firmám
 
+### Tabulka práv
+
+| Funkce | Žadatel | Řešitel | Obchodník | Správce | Administrátor |
+|--------|:-------:|:-------:|:---------:|:-------:|:-------------:|
+| **Tikety — čtení** | | | | | |
+| Vidí seznam tiketů | jen vlastní | jen přiřazené | jen přiřazené | všechny ¹ | všechny |
+| Vidí detail tiketu | jen vlastní | jen přiřazený | jen přiřazený | všechny ¹ | všechny |
+| Vidí záznamy času a celkové hodiny | — | ✓ | ✓ | ✓ | — |
+| **Tikety — vytvoření a editace** | | | | | |
+| Vytvořit tiket | ✓ | — | — | ✓ | — |
+| Editovat tiket (název, popis, typ, oblast, priorita) | — | přiřazený ² | — | ✓ ¹ ² | — |
+| Změnit typ tiketu | — | přiřazený ² | — | ✓ ¹ ² | — |
+| **Tikety — komentáře a čas** | | | | | |
+| Komentovat tiket | jen vlastní | přiřazený | přiřazený | ✓ ¹ | — |
+| Zapsat čas | — | přiřazený | přiřazený | jen pokud přiřazen ³ | — |
+| **Tikety — akce** | | | | | |
+| Přiřadit řešitele | — | — | — | ✓ ¹ | — |
+| Přiřadit obchodníka | — | — | — | ✓ ¹ | — |
+| Vyřešit tiket | — | přiřazený | — | ✓ ¹ | — |
+| Zamítnout tiket | — | — | — | ✓ ¹ | — |
+| Znovu otevřít tiket | — | — | — | ✓ ¹ | — |
+| **Statistiky** | | | | | |
+| Vidí vlastní statistiky | — | ✓ | — | — | — |
+| Vidí statistiky všech uživatelů a firem | — | — | — | ✓ ¹ | — |
+| **Administrace** | | | | | |
+| Spravovat uživatele a jejich role | — | — | — | — | ✓ |
+| Spravovat firmy | — | — | — | — | ✓ |
+| Nastavit omezení správcům (oblast, firmy) | — | — | — | — | ✓ |
+
+¹ V rámci nastaveného omezení oblasti a firem správce (pokud není omezení nastaveno, platí pro všechny tikety).
+
+² Nelze v uzamčeném stavu — „Vyřešeno" nebo „Zamítnuto".
+
+³ Správce smí zapisovat čas průběžně pouze tehdy, je-li k danému tiketu zároveň přiřazen jako řešitel nebo obchodník.
+
 ## Požadavky
 
 Požadavky zakládá žadatel a musí vyplnit
@@ -221,28 +256,28 @@ volitelné.
 
 ### Notifikace
 
-Pokud je založen nový požadavek, přijde žadateli a správcům, kteří
-mají na daný požadavek přístup (viz omezení správce), notifikační e-mail
-obsahující Typ požadavku, Název, Popis, Oblast a Prioritu.
+| Událost | Příjemci | Obsah e-mailu |
+|---------|----------|---------------|
+| Vytvořen nový požadavek | Žadatel + oprávnění správci ¹ | Typ, Název, Popis, Oblast, Priorita |
+| Stav změněn na „Řeší se" | Žadatel | Název, nový stav |
+| Stav změněn na „Příprava nabídky" | Žadatel | Název, nový stav |
+| Přiřazen řešitel | Řešitel | Název tiketu |
+| Přiřazen obchodník | Obchodník | Název tiketu |
+| Přidán komentář | Všichni přiřazení (žadatel, řešitel, obchodník) kromě autora komentáře | Název, text komentáře |
+| Požadavek vyřešen | Žadatel | Název, stav „Vyřešeno", způsob vyřešení |
+| Požadavek zamítnut | Žadatel | Název, stav „Zamítnuto", důvod zamítnutí |
 
-Pravidla pro výběr správců při notifikaci o novém požadavku:
+¹ **Výběr oprávněných správců** se řídí jejich omezeními oblasti a firem:
 
-- Pokud má požadavek oblast „Neznámá", dostane notifikaci každý správce,
-  jehož omezení firem zahrnuje firmu požadavku nebo nemá nastaveno žádné
-  omezení firem (oblast-filtr je u tiketu s oblastí „Neznámá" přeskočen).
-
-- Pokud správce nemá nastaveno žádné omezení (ani oblast, ani firmy),
-  dostane notifikaci vždy.
-
-Pokud se změní stav požadavku na „Řeší se" nebo „Příprava nabídky",
-přijde žadateli notifikační e-mail obsahující Název a nový stav.
-
-Pokud někdo okomentuje požadavek, přijde ostatním přiřazeným osobám
-(žadatel, řešitel, obchodník) notifikační e-mail obsahující Název a nový
-komentář.
-
-Při vyřešení a zamítnutí požadavku přijde žadateli notifikační e-mail
-obsahující Název, nový stav a způsob vyřešení nebo důvod zamítnutí.
+- Správce bez omezení dostane notifikaci vždy.
+- Správce s omezením oblasti dostane notifikaci pouze o požadavcích
+  dané oblasti. Požadavky s oblastí „Neznámá" oblast-filtr přeskočí
+  (dostane notifikaci každý správce s odpovídajícím omezením firem nebo
+  bez omezení firem).
+- Správce s omezením firem dostane notifikaci pouze o požadavcích
+  daných firem.
+- Správce s oběma omezeními musí požadavek splňovat zároveň oblast
+  i firmu.
 
 ## Přehled požadavků
 
