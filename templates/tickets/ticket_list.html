@@ -62,8 +62,27 @@
   <div style="display:flex;gap:6px;align-items:flex-end">
     <button type="submit" class="btn btn-sky btn-sm">{% trans "Filtrovat" %}</button>
     <a href="{% url 'tickets:list' %}" class="btn btn-secondary btn-sm">{% trans "Reset" %}</a>
+    <a id="export-btn" href="{% url 'tickets:export' %}" class="btn btn-secondary btn-sm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline-block;vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      {% trans "Export XLSX" %}
+    </a>
   </div>
 </form>
+
+<script>
+(function () {
+  var form = document.querySelector('.filter-bar');
+  var btn = document.getElementById('export-btn');
+  function updateExportHref() {
+    var base = btn.href.split('?')[0];
+    var params = new URLSearchParams(new FormData(form));
+    btn.href = base + (params.toString() ? '?' + params.toString() : '');
+  }
+  updateExportHref();
+  form.addEventListener('change', updateExportHref);
+  form.addEventListener('input', updateExportHref);
+})();
+</script>
 
   {# TABLE VIEW #}
   <div class="ticket-table-wrap" x-show="view === 'table'">

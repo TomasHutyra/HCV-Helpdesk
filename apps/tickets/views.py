@@ -1,3 +1,5 @@
+import io
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as db_models
@@ -61,6 +63,36 @@ def _manager_has_ticket_access(user, ticket):
     return False
 
 
+def _apply_ticket_filters(qs, get_params, user):
+    """Aplikuje filtry z GET parametrů na queryset tiketů."""
+    form = TicketFilterForm(get_params, user=user)
+    if form.is_valid():
+        if form.cleaned_data.get('status'):
+            qs = qs.filter(status=form.cleaned_data['status'])
+        if form.cleaned_data.get('type'):
+            qs = qs.filter(type=form.cleaned_data['type'])
+        if form.cleaned_data.get('area'):
+            qs = qs.filter(area=form.cleaned_data['area'])
+        if form.cleaned_data.get('priority'):
+            qs = qs.filter(priority=form.cleaned_data['priority'])
+        if form.cleaned_data.get('company'):
+            qs = qs.filter(company=form.cleaned_data['company'])
+        if form.cleaned_data.get('requester'):
+            qs = qs.filter(requester=form.cleaned_data['requester'])
+        if form.cleaned_data.get('resolver'):
+            qs = qs.filter(resolver=form.cleaned_data['resolver'])
+        if form.cleaned_data.get('search'):
+            q = form.cleaned_data['search']
+            qs = qs.filter(
+                db_models.Q(title__icontains=q) | db_models.Q(description__icontains=q)
+            )
+        if form.cleaned_data.get('date_from'):
+            qs = qs.filter(created_at__date__gte=form.cleaned_data['date_from'])
+        if form.cleaned_data.get('date_to'):
+            qs = qs.filter(created_at__date__lte=form.cleaned_data['date_to'])
+    return qs
+
+
 class TicketListView(LoginRequiredMixin, ListView):
     model = Ticket
     template_name = 'tickets/ticket_list.html'
@@ -71,9 +103,8 @@ class TicketListView(LoginRequiredMixin, ListView):
         user = self.request.user
         qs = Ticket.objects.select_related('requester', 'resolver', 'sales', 'company')
 
-        # Filtrování podle role
         if user.has_role(UserRole.ADMIN):
-            pass  # Admin vidí vše
+            pass
         elif user.has_role(UserRole.MANAGER):
             q = user.get_ticket_visibility_q()
             if q is not None:
@@ -87,32 +118,7 @@ class TicketListView(LoginRequiredMixin, ListView):
         else:
             qs = qs.none()
 
-        # Filtrování z formuláře
-        form = TicketFilterForm(self.request.GET, user=user)
-        if form.is_valid():
-            if form.cleaned_data.get('status'):
-                qs = qs.filter(status=form.cleaned_data['status'])
-            if form.cleaned_data.get('type'):
-                qs = qs.filter(type=form.cleaned_data['type'])
-            if form.cleaned_data.get('area'):
-                qs = qs.filter(area=form.cleaned_data['area'])
-            if form.cleaned_data.get('priority'):
-                qs = qs.filter(priority=form.cleaned_data['priority'])
-            if form.cleaned_data.get('company'):
-                qs = qs.filter(company=form.cleaned_data['company'])
-            if form.cleaned_data.get('requester'):
-                qs = qs.filter(requester=form.cleaned_data['requester'])
-            if form.cleaned_data.get('resolver'):
-                qs = qs.filter(resolver=form.cleaned_data['resolver'])
-            if form.cleaned_data.get('search'):
-                q = form.cleaned_data['search']
-                qs = qs.filter(
-                    db_models.Q(title__icontains=q) | db_models.Q(description__icontains=q)
-                )
-            if form.cleaned_data.get('date_from'):
-                qs = qs.filter(created_at__date__gte=form.cleaned_data['date_from'])
-            if form.cleaned_data.get('date_to'):
-                qs = qs.filter(created_at__date__lte=form.cleaned_data['date_to'])
+        qs = _apply_ticket_filters(qs, self.request.GET, user)
 
         if user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN):
             qs = qs.annotate(hours_sum=db_models.Sum('time_logs__hours'))
@@ -126,6 +132,99 @@ class TicketListView(LoginRequiredMixin, ListView):
             UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN
         )
         return ctx
+
+
+class TicketExportView(LoginRequiredMixin, View):
+    def get(self, request):
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from django.utils.timezone import localtime
+
+        user = request.user
+        qs = Ticket.objects.select_related('requester', 'resolver', 'sales', 'company', 'area')
+
+        if user.has_role(UserRole.ADMIN):
+            pass
+        elif user.has_role(UserRole.MANAGER):
+            q = user.get_ticket_visibility_q()
+            if q is not None:
+                qs = qs.filter(q)
+        elif user.has_role(UserRole.RESOLVER):
+            qs = qs.filter(db_models.Q(resolver=user) | db_models.Q(status=Ticket.STATUS_NEW))
+        elif user.has_role(UserRole.SALES):
+            qs = qs.filter(sales=user)
+        elif user.has_role(UserRole.REQUESTER):
+            qs = qs.filter(requester=user)
+        else:
+            qs = qs.none()
+
+        qs = _apply_ticket_filters(qs, request.GET, user)
+
+        show_hours = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
+        show_resolver = user.has_role(UserRole.MANAGER, UserRole.ADMIN)
+
+        if show_hours:
+            qs = qs.annotate(hours_sum=db_models.Sum('time_logs__hours'))
+
+        qs = qs.order_by('-created_at')
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = _('Tikety')
+
+        header_font = Font(bold=True, color='FFFFFF')
+        header_fill = PatternFill(fill_type='solid', fgColor='1A56DB')
+        header_align = Alignment(horizontal='center', vertical='center')
+
+        headers = ['#', _('Název'), _('Typ'), _('Stav'), _('Priorita'), _('Oblast'), _('Firma'), _('Žadatel')]
+        if show_resolver:
+            headers.append(_('Řešitel'))
+        if show_hours:
+            headers.append(_('Hodiny'))
+        headers.append(_('Vytvořeno'))
+
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=str(header))
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_align
+
+        type_labels = dict(Ticket.TYPE_CHOICES)
+        status_labels = dict(Ticket.STATUS_CHOICES)
+        priority_labels = dict(Ticket.PRIORITY_CHOICES)
+
+        for row, ticket in enumerate(qs, 2):
+            col = 1
+            ws.cell(row=row, column=col, value=ticket.pk); col += 1
+            ws.cell(row=row, column=col, value=ticket.title); col += 1
+            ws.cell(row=row, column=col, value=str(type_labels.get(ticket.type, ticket.type))); col += 1
+            ws.cell(row=row, column=col, value=str(status_labels.get(ticket.status, ticket.status))); col += 1
+            ws.cell(row=row, column=col, value=str(priority_labels.get(ticket.priority, ticket.priority))); col += 1
+            ws.cell(row=row, column=col, value=ticket.area.name if ticket.area else ''); col += 1
+            ws.cell(row=row, column=col, value=ticket.company.name if ticket.company else ''); col += 1
+            ws.cell(row=row, column=col, value=str(ticket.requester) if ticket.requester else ''); col += 1
+            if show_resolver:
+                ws.cell(row=row, column=col, value=str(ticket.resolver) if ticket.resolver else ''); col += 1
+            if show_hours:
+                ws.cell(row=row, column=col, value=float(ticket.hours_sum) if ticket.hours_sum else 0); col += 1
+            created = localtime(ticket.created_at)
+            ws.cell(row=row, column=col, value=created.replace(tzinfo=None))
+            ws.cell(row=row, column=col).number_format = 'DD.MM.YYYY'
+
+        for col in ws.columns:
+            max_len = max((len(str(cell.value)) if cell.value else 0) for cell in col)
+            ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 50)
+
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename="tikety.xlsx"'
+        return response
 
 
 class TicketDetailView(LoginRequiredMixin, DetailView):
