@@ -2,47 +2,54 @@
 {% load i18n %}
 
 {% block title %}{% trans "Uživatelé" %} — HCV Helpdesk{% endblock %}
+{% block nav_users %}active{% endblock %}
+{% block topbar_title %}{% trans "Uživatelé" %}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">{% trans "Uživatelé" %}</h1>
-  <a href="{% url 'accounts:user_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-    + {% trans "Nový uživatel" %}
+<div class="page-header">
+  <h1 class="page-title">{% trans "Uživatelé" %}</h1>
+  <a href="{% url 'accounts:user_create' %}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    {% trans "Nový uživatel" %}
   </a>
 </div>
 
-<div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
-  <table class="min-w-full divide-y divide-gray-200 text-sm">
-    <thead class="bg-gray-50">
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
       <tr>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Uživatel" %}</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "E-mail" %}</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Firma" %}</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Role" %}</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Aktivní" %}</th>
-        <th class="px-4 py-3"></th>
+        <th>{% trans "Uživatel" %}</th>
+        <th>{% trans "E-mail" %}</th>
+        <th>{% trans "Firma" %}</th>
+        <th>{% trans "Role" %}</th>
+        <th>{% trans "Aktivní" %}</th>
+        <th></th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-gray-100">
+    <tbody>
       {% for u in users %}
-      <tr class="hover:bg-gray-50">
-        <td class="px-4 py-3 font-medium text-gray-900">{{ u }}</td>
-        <td class="px-4 py-3 text-gray-600">{{ u.email }}</td>
-        <td class="px-4 py-3 text-gray-600">{{ u.company|default:'—' }}</td>
-        <td class="px-4 py-3">
+      <tr>
+        <td style="font-weight:600">{{ u }}</td>
+        <td style="color:var(--c-text-muted)">{{ u.email }}</td>
+        <td style="color:var(--c-text-muted)">{{ u.company|default:'—' }}</td>
+        <td>
           {% for r in u.user_roles.all %}
-          <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full mr-1">{{ r.get_role_display }}</span>
-          {% empty %}<span class="text-gray-400">—</span>{% endfor %}
+          <span class="badge" style="background:var(--c-sky-light);color:var(--c-sky);margin-right:3px">{{ r.get_role_display }}</span>
+          {% empty %}<span style="color:var(--c-text-light)">—</span>{% endfor %}
         </td>
-        <td class="px-4 py-3">
-          {% if u.is_active %}<span class="text-green-600">✓</span>{% else %}<span class="text-red-400">✗</span>{% endif %}
+        <td>
+          {% if u.is_active %}
+          <span style="color:var(--c-green);font-weight:700;font-size:13px">✓ {% trans "Aktivní" %}</span>
+          {% else %}
+          <span style="color:var(--c-red);font-size:13px">✗ {% trans "Neaktivní" %}</span>
+          {% endif %}
         </td>
-        <td class="px-4 py-3 text-right">
-          <a href="{% url 'accounts:user_update' u.pk %}" class="text-blue-600 hover:underline text-sm">{% trans "Upravit" %}</a>
+        <td style="text-align:right">
+          <a href="{% url 'accounts:user_update' u.pk %}" class="btn btn-secondary btn-sm">{% trans "Upravit" %}</a>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">{% trans "Žádní uživatelé." %}</td></tr>
+      <tr><td colspan="6" style="padding:28px;text-align:center;color:var(--c-text-light)">{% trans "Žádní uživatelé." %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

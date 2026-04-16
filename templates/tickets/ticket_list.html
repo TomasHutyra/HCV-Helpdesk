@@ -2,89 +2,133 @@
 {% load i18n %}
 
 {% block title %}{% trans "Tikety" %} — HCV Helpdesk{% endblock %}
+{% block nav_tickets %}active{% endblock %}
+{% block topbar_title %}{% trans "Tikety" %}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-4">
-  <h1 class="text-2xl font-bold text-gray-900">{% trans "Tikety" %}</h1>
+<div x-data="{ view: localStorage.getItem('ticketView') || 'table' }">
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">{% trans "Tikety" %}</h1>
+    {# View toggle — tabulka / karty #}
+    <div class="view-toggle">
+      <button class="view-toggle-btn" :class="view === 'table' ? 'active' : ''"
+              @click="view = 'table'; localStorage.setItem('ticketView', 'table')"
+              title="{% trans 'Tabulka' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 10h18M3 14h18M10 3v18M3 6a1 1 0 011-1h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6z"/></svg>
+      </button>
+      <button class="view-toggle-btn" :class="view === 'cards' ? 'active' : ''"
+              @click="view = 'cards'; localStorage.setItem('ticketView', 'cards')"
+              title="{% trans 'Karty' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </button>
+    </div>
+  </div>
   {% if is_requester %}
-  <a href="{% url 'tickets:create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-    + {% trans "Nový tiket" %}
+  <a href="{% url 'tickets:create' %}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    {% trans "Nový tiket" %}
   </a>
   {% endif %}
 </div>
 
-{# Filtr #}
-<form method="get" class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4 flex flex-wrap gap-3 items-end">
+{# Filter bar #}
+<form method="get" class="filter-bar">
   {% for field in filter_form %}
-  <div class="min-w-[120px]">
-    <label class="block text-xs font-medium text-gray-500 mb-1">{{ field.label }}</label>
-    <select name="{{ field.html_name }}"
-            class="block w-full rounded-md border-gray-300 text-sm py-1.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+  <div class="filter-field">
+    <label>{{ field.label }}</label>
+    <select name="{{ field.html_name }}">
       {% for val, label in field.field.choices %}
       <option value="{{ val }}" {% if field.value|stringformat:"s" == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
   </div>
   {% endfor %}
-  <div class="min-w-[160px]">
-    <label class="block text-xs font-medium text-gray-500 mb-1">{% trans "Hledat" %}</label>
-    <input type="text" name="search" value="{{ request.GET.search|default:'' }}"
-           class="block w-full rounded-md border-gray-300 text-sm py-1.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-           placeholder="{% trans 'Název, popis…' %}">
+  <div class="filter-field" style="min-width:160px">
+    <label>{% trans "Hledat" %}</label>
+    <input type="text" name="search" value="{{ request.GET.search|default:'' }}" placeholder="{% trans 'Název, popis…' %}">
   </div>
-  <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium self-end">
-    {% trans "Filtrovat" %}
-  </button>
-  <a href="{% url 'tickets:list' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-1.5 rounded-lg text-sm font-medium self-end">
-    {% trans "Reset" %}
-  </a>
+  <div style="display:flex;gap:6px;align-items:flex-end">
+    <button type="submit" class="btn btn-sky btn-sm">{% trans "Filtrovat" %}</button>
+    <a href="{% url 'tickets:list' %}" class="btn btn-secondary btn-sm">{% trans "Reset" %}</a>
+  </div>
 </form>
 
-{# Tabulka #}
-<div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
-  <table class="min-w-full divide-y divide-gray-200 text-sm">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">#</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Název" %}</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Typ" %}</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Stav" %}</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Priorita" %}</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Firma" %}</th>
-        {% if is_manager %}<th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Řešitel" %}</th>{% endif %}
-        {% if show_hours %}<th class="px-4 py-3 text-right font-medium text-gray-500">{% trans "Hodiny" %}</th>{% endif %}
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Vytvořeno" %}</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      {% for ticket in tickets %}
-      <tr class="hover:bg-gray-50 cursor-pointer" onclick="location.href='{% url 'tickets:detail' ticket.pk %}'">
-        <td class="px-4 py-3 text-gray-400 font-mono">{{ ticket.pk }}</td>
-        <td class="px-4 py-3 font-medium text-gray-900 max-w-xs truncate">{{ ticket.title }}</td>
-        <td class="px-4 py-3">{% include 'tickets/partials/type_badge.html' with ticket=ticket %}</td>
-        <td class="px-4 py-3">{% include 'tickets/partials/status_badge.html' with ticket=ticket %}</td>
-        <td class="px-4 py-3">{% include 'tickets/partials/priority_badge.html' with ticket=ticket %}</td>
-        <td class="px-4 py-3 text-gray-600">{{ ticket.company.name }}</td>
-        {% if is_manager %}<td class="px-4 py-3 text-gray-600">{{ ticket.resolver|default:'—' }}</td>{% endif %}
-        {% if show_hours %}<td class="px-4 py-3 text-right text-gray-600 font-medium">{% if ticket.hours_sum %}{{ ticket.hours_sum }} h{% else %}—{% endif %}</td>{% endif %}
-        <td class="px-4 py-3 text-gray-400 whitespace-nowrap">{{ ticket.created_at|date:"d.m.Y" }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">{% trans "Žádné tikety neodpovídají filtru." %}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {# TABLE VIEW #}
+  <div class="ticket-table-wrap" x-show="view === 'table'">
+    <table class="ticket-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>{% trans "Název" %}</th>
+          <th>{% trans "Typ" %}</th>
+          <th>{% trans "Stav" %}</th>
+          <th>{% trans "Priorita" %}</th>
+          <th>{% trans "Firma" %}</th>
+          {% if is_manager %}<th>{% trans "Řešitel" %}</th>{% endif %}
+          {% if show_hours %}<th style="text-align:right">{% trans "Hodiny" %}</th>{% endif %}
+          <th>{% trans "Vytvořeno" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket in tickets %}
+        <tr onclick="location.href='{% url 'tickets:detail' ticket.pk %}'">
+          <td><span class="ticket-id">#{{ ticket.pk }}</span></td>
+          <td class="ticket-title-cell"><span class="ticket-title-text">{{ ticket.title }}</span></td>
+          <td>{% include 'tickets/partials/type_badge.html' with ticket=ticket %}</td>
+          <td>{% include 'tickets/partials/status_badge.html' with ticket=ticket %}</td>
+          <td>{% include 'tickets/partials/priority_badge.html' with ticket=ticket %}</td>
+          <td class="ticket-muted">{{ ticket.company.name }}</td>
+          {% if is_manager %}<td class="ticket-muted">{{ ticket.resolver|default:'—' }}</td>{% endif %}
+          {% if show_hours %}<td class="ticket-hours">{% if ticket.hours_sum %}{{ ticket.hours_sum }} h{% else %}—{% endif %}</td>{% endif %}
+          <td class="ticket-date">{{ ticket.created_at|date:"d.m.Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" style="padding:32px;text-align:center;color:var(--c-text-light);font-size:13.5px">
+            {% trans "Žádné tikety neodpovídají filtru." %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# CARDS VIEW #}
+  <div class="ticket-cards" x-show="view === 'cards'" style="display:none">
+    {% for ticket in tickets %}
+    <a href="{% url 'tickets:detail' ticket.pk %}" class="ticket-card">
+      <div class="ticket-card-top">
+        <span class="ticket-card-id">#{{ ticket.pk }}</span>
+        <span class="ticket-card-date">{{ ticket.created_at|date:"d.m.Y" }}</span>
+      </div>
+      <div class="ticket-card-title">{{ ticket.title }}</div>
+      <div class="ticket-card-badges">
+        {% include 'tickets/partials/type_badge.html' with ticket=ticket %}
+        {% include 'tickets/partials/status_badge.html' with ticket=ticket %}
+        {% include 'tickets/partials/priority_badge.html' with ticket=ticket %}
+        <span class="ticket-card-company">{{ ticket.company.name }}</span>
+      </div>
+    </a>
+    {% empty %}
+    <div style="padding:28px;text-align:center;color:var(--c-text-light);font-size:13.5px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r)">
+      {% trans "Žádné tikety neodpovídají filtru." %}
+    </div>
+    {% endfor %}
+  </div>
+
 </div>
 
-{# Stránkování #}
+{# Pagination #}
 {% if is_paginated %}
-<div class="mt-4 flex items-center gap-2 justify-center text-sm">
+<div class="pagination">
   {% if page_obj.has_previous %}
-  <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}" class="px-3 py-1 rounded border hover:bg-gray-50">←</a>
+  <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}" class="pagination-btn">←</a>
   {% endif %}
-  <span class="text-gray-500">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  <span class="pagination-info">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
   {% if page_obj.has_next %}
-  <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}" class="px-3 py-1 rounded border hover:bg-gray-50">→</a>
+  <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}" class="pagination-btn">→</a>
   {% endif %}
 </div>
 {% endif %}

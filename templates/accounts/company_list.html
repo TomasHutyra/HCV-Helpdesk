@@ -2,35 +2,38 @@
 {% load i18n %}
 
 {% block title %}{% trans "Firmy" %} — HCV Helpdesk{% endblock %}
+{% block nav_companies %}active{% endblock %}
+{% block topbar_title %}{% trans "Firmy" %}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">{% trans "Firmy" %}</h1>
-  <a href="{% url 'accounts:company_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-    + {% trans "Nová firma" %}
+<div class="page-header">
+  <h1 class="page-title">{% trans "Firmy" %}</h1>
+  <a href="{% url 'accounts:company_create' %}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    {% trans "Nová firma" %}
   </a>
 </div>
 
-<div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
-  <table class="min-w-full divide-y divide-gray-200 text-sm">
-    <thead class="bg-gray-50">
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
       <tr>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Název firmy" %}</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Počet uživatelů" %}</th>
-        <th class="px-4 py-3"></th>
+        <th>{% trans "Název firmy" %}</th>
+        <th>{% trans "Počet uživatelů" %}</th>
+        <th></th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-gray-100">
+    <tbody>
       {% for company in companies %}
-      <tr class="hover:bg-gray-50">
-        <td class="px-4 py-3 font-medium text-gray-900">{{ company.name }}</td>
-        <td class="px-4 py-3 text-gray-600">{{ company.users.count }}</td>
-        <td class="px-4 py-3 text-right">
-          <a href="{% url 'accounts:company_update' company.pk %}" class="text-blue-600 hover:underline text-sm">{% trans "Upravit" %}</a>
+      <tr>
+        <td style="font-weight:600">{{ company.name }}</td>
+        <td style="color:var(--c-text-muted)">{{ company.users.count }}</td>
+        <td style="text-align:right">
+          <a href="{% url 'accounts:company_update' company.pk %}" class="btn btn-secondary btn-sm">{% trans "Upravit" %}</a>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="3" class="px-4 py-6 text-center text-gray-400">{% trans "Žádné firmy." %}</td></tr>
+      <tr><td colspan="3" style="padding:28px;text-align:center;color:var(--c-text-light)">{% trans "Žádné firmy." %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

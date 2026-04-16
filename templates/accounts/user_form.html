@@ -2,40 +2,44 @@
 {% load i18n %}
 
 {% block title %}{% if object %}{% trans "Upravit uživatele" %}{% else %}{% trans "Nový uživatel" %}{% endif %} — HCV Helpdesk{% endblock %}
+{% block nav_users %}active{% endblock %}
+{% block topbar_title %}{% if object %}{% trans "Upravit uživatele" %}{% else %}{% trans "Nový uživatel" %}{% endif %}{% endblock %}
 
 {% block content %}
-<div class="max-w-xl">
-  <div class="flex items-center gap-2 mb-6">
-    <a href="{% url 'accounts:user_list' %}" class="text-blue-600 hover:underline text-sm">{% trans "Uživatelé" %}</a>
-    <span class="text-gray-400">/</span>
-    <h1 class="text-2xl font-bold text-gray-900">
-      {% if object %}{% trans "Upravit uživatele" %}{% else %}{% trans "Nový uživatel" %}{% endif %}
-    </h1>
-  </div>
+<div class="breadcrumb">
+  <a href="{% url 'accounts:user_list' %}">{% trans "Uživatelé" %}</a>
+  <span class="breadcrumb-sep">/</span>
+  <span>{% if object %}{{ object }}{% else %}{% trans "Nový" %}{% endif %}</span>
+</div>
 
-  <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-6">
-    <form method="post" class="space-y-4">
+<h1 class="page-title" style="margin-bottom:18px">
+  {% if object %}{% trans "Upravit uživatele" %}{% else %}{% trans "Nový uživatel" %}{% endif %}
+</h1>
+
+<div style="max-width:520px">
+  <div class="card card-body">
+    <form method="post" class="form-stack">
       {% csrf_token %}
       {% for field in form %}
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+      <div class="form-group">
+        <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
         {% if field.field.widget.input_type == 'checkbox' and field.field.widget|stringformat:'s' == '<CheckboxSelectMultiple>' %}
-          <div class="space-y-1">{% for choice in field %}
-            <label class="flex items-center gap-2 text-sm">{{ choice.tag }} {{ choice.choice_label }}</label>
-          {% endfor %}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:2px">
+            {% for choice in field %}
+            <label style="display:flex;align-items:center;gap:6px;padding:5px 12px;border:1px solid var(--c-border);border-radius:20px;cursor:pointer;font-size:13px;color:var(--c-text-muted)">
+              {{ choice.tag }} {{ choice.choice_label }}
+            </label>
+            {% endfor %}
+          </div>
         {% else %}
           {{ field }}
         {% endif %}
-        {% if field.errors %}<p class="mt-1 text-xs text-red-600">{{ field.errors.0 }}</p>{% endif %}
+        {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
       </div>
       {% endfor %}
-      <div class="flex gap-3 pt-2">
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium">
-          {% trans "Uložit" %}
-        </button>
-        <a href="{% url 'accounts:user_list' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-lg text-sm font-medium">
-          {% trans "Zpět" %}
-        </a>
+      <div style="display:flex;gap:8px;padding-top:4px">
+        <button type="submit" class="btn btn-primary">{% trans "Uložit" %}</button>
+        <a href="{% url 'accounts:user_list' %}" class="btn btn-secondary">{% trans "Zpět" %}</a>
       </div>
     </form>
   </div>

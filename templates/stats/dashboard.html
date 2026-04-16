@@ -2,115 +2,116 @@
 {% load i18n %}
 
 {% block title %}{% trans "Statistiky" %} — HCV Helpdesk{% endblock %}
+{% block nav_stats %}active{% endblock %}
+{% block topbar_title %}{% trans "Statistiky" %}{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">{% trans "Statistiky" %}</h1>
-  {# Navigace měsíců #}
-  <div class="flex items-center gap-3 text-sm">
-    <a href="?year={{ prev_year }}&month={{ prev_month }}" class="px-3 py-1.5 rounded-lg border hover:bg-gray-50">←</a>
-    <span class="font-semibold text-gray-700">{{ month_name }} {{ year }}</span>
-    <a href="?year={{ next_year }}&month={{ next_month }}" class="px-3 py-1.5 rounded-lg border hover:bg-gray-50">→</a>
+<div class="page-header">
+  <h1 class="page-title">{% trans "Statistiky" %}</h1>
+  <div class="month-nav">
+    <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn btn-ghost btn-sm">←</a>
+    <span class="month-nav-label">{{ month_name }} {{ year }}</span>
+    <a href="?year={{ next_year }}&month={{ next_month }}" class="btn btn-ghost btn-sm">→</a>
   </div>
 </div>
 
 {% if is_manager %}
-{# Statistiky řešitelů #}
-<h2 class="text-lg font-semibold text-gray-800 mb-3">{% trans "Řešitelé" %}</h2>
-<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-  <table class="min-w-full divide-y divide-gray-200 text-sm">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Řešitel" %}</th>
-        <th class="px-4 py-3 text-center font-medium text-gray-500">{% trans "Celkem" %}</th>
-        <th class="px-4 py-3 text-center font-medium text-gray-500">{% trans "Nových" %}</th>
-        <th class="px-4 py-3 text-center font-medium text-gray-500">{% trans "Řeší se" %}</th>
-        <th class="px-4 py-3 text-center font-medium text-gray-500">{% trans "Vyřešeno" %}</th>
-        <th class="px-4 py-3 text-center font-medium text-gray-500">{% trans "Zamítnuto" %}</th>
-        <th class="px-4 py-3 text-center font-medium text-gray-500">{% trans "Hodin" %}</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      {% for s in resolver_stats %}
-      <tr>
-        <td class="px-4 py-3 font-medium text-gray-900">{{ s.user }}</td>
-        <td class="px-4 py-3 text-center text-gray-600">{{ s.total }}</td>
-        <td class="px-4 py-3 text-center text-gray-400">{{ s.new }}</td>
-        <td class="px-4 py-3 text-center text-blue-600">{{ s.in_progress }}</td>
-        <td class="px-4 py-3 text-center text-green-600 font-medium">{{ s.resolved }}</td>
-        <td class="px-4 py-3 text-center text-red-400">{{ s.rejected }}</td>
-        <td class="px-4 py-3 text-center font-medium">{{ s.time_total }} h</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">{% trans "Žádní řešitelé." %}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
 
-{# Statistiky firem #}
-<h2 class="text-lg font-semibold text-gray-800 mb-3">{% trans "Firmy" %}</h2>
-<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-  <table class="min-w-full divide-y divide-gray-200 text-sm">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-4 py-3 text-left font-medium text-gray-500">{% trans "Firma" %}</th>
-        <th class="px-4 py-3 text-center font-medium text-gray-500">{% trans "Celkem" %}</th>
-        <th class="px-4 py-3 text-center font-medium text-gray-500">{% trans "Otevřených" %}</th>
-        <th class="px-4 py-3 text-center font-medium text-gray-500">{% trans "Vyřešeno" %}</th>
-        <th class="px-4 py-3 text-center font-medium text-gray-500">{% trans "Zamítnuto" %}</th>
-        <th class="px-4 py-3 text-center font-medium text-gray-500">{% trans "Hodin" %}</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      {% for s in company_stats %}
-      <tr>
-        <td class="px-4 py-3 font-medium text-gray-900">{{ s.company }}</td>
-        <td class="px-4 py-3 text-center text-gray-600">{{ s.total }}</td>
-        <td class="px-4 py-3 text-center text-amber-600 font-medium">{{ s.open }}</td>
-        <td class="px-4 py-3 text-center text-green-600 font-medium">{{ s.resolved }}</td>
-        <td class="px-4 py-3 text-center text-red-400">{{ s.rejected }}</td>
-        <td class="px-4 py-3 text-center font-medium">{{ s.time_total }} h</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">{% trans "Žádné firmy." %}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+  {# Resolver stats #}
+  <h2 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:800;letter-spacing:-0.2px;color:var(--c-text);margin-bottom:10px">{% trans "Řešitelé" %}</h2>
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th>{% trans "Řešitel" %}</th>
+          <th class="num">{% trans "Celkem" %}</th>
+          <th class="num">{% trans "Nových" %}</th>
+          <th class="num">{% trans "Řeší se" %}</th>
+          <th class="num">{% trans "Vyřešeno" %}</th>
+          <th class="num">{% trans "Zamítnuto" %}</th>
+          <th class="num">{% trans "Hodin" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in resolver_stats %}
+        <tr>
+          <td style="font-weight:600">{{ s.user }}</td>
+          <td class="num" style="color:var(--c-text-muted)">{{ s.total }}</td>
+          <td class="num" style="color:var(--c-text-light)">{{ s.new }}</td>
+          <td class="num" style="color:var(--c-sky);font-weight:600">{{ s.in_progress }}</td>
+          <td class="num" style="color:var(--c-green);font-weight:600">{{ s.resolved }}</td>
+          <td class="num" style="color:var(--c-red)">{{ s.rejected }}</td>
+          <td class="num" style="font-weight:700">{{ s.time_total }} h</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="padding:24px;text-align:center;color:var(--c-text-light)">{% trans "Žádní řešitelé." %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Company stats #}
+  <h2 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:800;letter-spacing:-0.2px;color:var(--c-text);margin-bottom:10px;margin-top:24px">{% trans "Firmy" %}</h2>
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th>{% trans "Firma" %}</th>
+          <th class="num">{% trans "Celkem" %}</th>
+          <th class="num">{% trans "Otevřených" %}</th>
+          <th class="num">{% trans "Vyřešeno" %}</th>
+          <th class="num">{% trans "Zamítnuto" %}</th>
+          <th class="num">{% trans "Hodin" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in company_stats %}
+        <tr>
+          <td style="font-weight:600">{{ s.company }}</td>
+          <td class="num" style="color:var(--c-text-muted)">{{ s.total }}</td>
+          <td class="num" style="color:var(--c-amber-hover);font-weight:600">{{ s.open }}</td>
+          <td class="num" style="color:var(--c-green);font-weight:600">{{ s.resolved }}</td>
+          <td class="num" style="color:var(--c-red)">{{ s.rejected }}</td>
+          <td class="num" style="font-weight:700">{{ s.time_total }} h</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="padding:24px;text-align:center;color:var(--c-text-light)">{% trans "Žádné firmy." %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
 {% else %}
-{# Vlastní statistiky řešitele #}
-{% if my_stats %}
-<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+  {% if my_stats %}
   {% with s=my_stats %}
-  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
-    <div class="text-3xl font-bold text-gray-900">{{ s.total }}</div>
-    <div class="text-xs text-gray-500 mt-1">{% trans "Celkem" %}</div>
-  </div>
-  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
-    <div class="text-3xl font-bold text-blue-600">{{ s.in_progress }}</div>
-    <div class="text-xs text-gray-500 mt-1">{% trans "Řeší se" %}</div>
-  </div>
-  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
-    <div class="text-3xl font-bold text-gray-400">{{ s.new }}</div>
-    <div class="text-xs text-gray-500 mt-1">{% trans "Nových" %}</div>
-  </div>
-  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
-    <div class="text-3xl font-bold text-green-600">{{ s.resolved }}</div>
-    <div class="text-xs text-gray-500 mt-1">{% trans "Vyřešeno" %}</div>
-  </div>
-  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
-    <div class="text-3xl font-bold text-red-400">{{ s.rejected }}</div>
-    <div class="text-xs text-gray-500 mt-1">{% trans "Zamítnuto" %}</div>
-  </div>
-  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
-    <div class="text-3xl font-bold text-gray-700">{{ s.time_total }}</div>
-    <div class="text-xs text-gray-500 mt-1">{% trans "Hodin" %}</div>
+  <div class="stats-grid">
+    <div class="stat-card stat-total">
+      <div class="stat-value">{{ s.total }}</div>
+      <div class="stat-label">{% trans "Celkem" %}</div>
+    </div>
+    <div class="stat-card stat-progress">
+      <div class="stat-value" style="color:var(--c-sky)">{{ s.in_progress }}</div>
+      <div class="stat-label">{% trans "Řeší se" %}</div>
+    </div>
+    <div class="stat-card stat-new">
+      <div class="stat-value" style="color:var(--c-text-muted)">{{ s.new }}</div>
+      <div class="stat-label">{% trans "Nových" %}</div>
+    </div>
+    <div class="stat-card stat-resolved">
+      <div class="stat-value" style="color:var(--c-green)">{{ s.resolved }}</div>
+      <div class="stat-label">{% trans "Vyřešeno" %}</div>
+    </div>
+    <div class="stat-card stat-rejected">
+      <div class="stat-value" style="color:var(--c-red)">{{ s.rejected }}</div>
+      <div class="stat-label">{% trans "Zamítnuto" %}</div>
+    </div>
+    <div class="stat-card stat-hours">
+      <div class="stat-value">{{ s.time_total }}</div>
+      <div class="stat-label">{% trans "Hodin" %}</div>
+    </div>
   </div>
   {% endwith %}
-</div>
-{% endif %}
+  {% endif %}
 {% endif %}
 
 {% endblock %}
