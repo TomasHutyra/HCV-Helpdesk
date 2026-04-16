@@ -2,11 +2,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-# Konstanta sdílená s Ticket.AREA_UNKNOWN – duplikována záměrně, aby nebyl
-# kruhový import mezi accounts a tickets.
-_AREA_UNKNOWN = 'unknown'
-
-
 class Company(models.Model):
     name = models.CharField(_('název'), max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -38,17 +33,12 @@ class User(AbstractUser):
     )
 
     # ---- Omezení správce ----
-    MANAGED_AREA_CHOICES = [
-        ('it', 'IT'),
-        ('helios', 'Helios'),
-    ]
-    managed_area = models.CharField(
-        _('oblast správce'),
-        max_length=20,
+    managed_areas = models.ManyToManyField(
+        'tickets.Area',
         blank=True,
-        default='',
-        choices=MANAGED_AREA_CHOICES,
-        help_text=_('Správce vidí pouze tikety dané oblasti. Ponechte prázdné pro přístup ke všem oblastem.'),
+        related_name='managing_managers',
+        verbose_name=_('spravované oblasti'),
+        help_text=_('Správce vidí pouze tikety těchto oblastí. Ponechte prázdné pro přístup ke všem oblastem.'),
     )
     managed_companies = models.ManyToManyField(
         'Company',
@@ -112,10 +102,11 @@ class User(AbstractUser):
         from django.db.models import Q
         parts = []
 
-        # Oblast: prázdná nebo 'unknown' → bez omezení
-        if self.managed_area and self.managed_area != _AREA_UNKNOWN:
-            # Tikety s neznámou oblastí jsou vždy zahrnuty (bez ohledu na omezení správce)
-            parts.append(Q(area=self.managed_area) | Q(area=_AREA_UNKNOWN))
+        # Oblast: prázdný seznam → bez omezení; "neznámá" oblast se jako omezení nepočítá
+        area_pks = list(self.managed_areas.filter(is_unknown=False).values_list('pk', flat=True))
+        if area_pks:
+            # Tikety s neznámou oblastí nebo bez oblasti jsou vždy zahrnuty
+            parts.append(Q(area_id__in=area_pks) | Q(area__is_unknown=True) | Q(area__isnull=True))
 
         # Firmy
         co_pks = list(self.managed_companies.values_list('pk', flat=True))
@@ -135,8 +126,9 @@ class User(AbstractUser):
         Vhodné pro kontrolu přístupu u jednoho tiketu.
         """
         # Oblast
-        if self.managed_area and self.managed_area != _AREA_UNKNOWN:
-            if ticket.area != _AREA_UNKNOWN and self.managed_area != ticket.area:
+        area_pks = set(self.managed_areas.filter(is_unknown=False).values_list('pk', flat=True))
+        if area_pks:
+            if ticket.area and not ticket.area.is_unknown and ticket.area_id not in area_pks:
                 return False
         # Firmy
         co_pks = set(self.managed_companies.values_list('pk', flat=True))

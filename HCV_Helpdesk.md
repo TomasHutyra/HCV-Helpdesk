@@ -80,16 +80,17 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
   - Rozděluje a vyhodnocuje práci
 
-  - Může mít nastavenou oblast (IT nebo Helios) a/nebo seznam firem.
+  - Může mít nastaven seznam oblastí a/nebo seznam firem.
     Pokud nemá nastaveno nic, vidí a spravuje všechny požadavky.
-    Pokud má nastavenou oblast, vidí pouze požadavky dané oblasti.
+    Pokud má nastaveny oblasti, vidí pouze požadavky těchto oblastí.
     Pokud má nastaveny firmy, vidí pouze požadavky daných firem.
-    Pokud má nastaveno obojí, vidí požadavky splňující zároveň oblast
-    i jednu z firem.
-    Oblast „Neznámá" nastavená správci se chová jako žádné omezení oblasti.
+    Pokud má nastaveno obojí, vidí požadavky splňující zároveň jednu
+    z oblastí i jednu z firem.
+    Oblast označená jako „neznámá" se jako omezení nepočítá —
+    přiřazení takové oblasti správci nemá vliv na viditelnost tiketů.
 
-  - Požadavky s oblastí „Neznámá" projdou oblast-filtrem u všech správců
-    (rozhoduje pouze omezení firem).
+  - Požadavky s oblastí označenou jako „neznámá" nebo bez oblasti
+    projdou oblast-filtrem u všech správců (rozhoduje pouze omezení firem).
 
   - Může přiřadit řešitele a obchodníka požadavku
 
@@ -119,6 +120,10 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
   - Přiřazuje žadatele k firmám
 
+  - Zakládá a spravuje oblasti (název, příznak „neznámá")
+
+  - Nastavuje omezení správcům — seznam oblastí a/nebo firem
+
 ### Tabulka práv
 
 | Funkce | Žadatel | Řešitel | Obchodník | Správce | Administrátor |
@@ -147,7 +152,8 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | **Administrace** | | | | | |
 | Spravovat uživatele a jejich role | — | — | — | — | ✓ |
 | Spravovat firmy | — | — | — | — | ✓ |
-| Nastavit omezení správcům (oblast, firmy) | — | — | — | — | ✓ |
+| Spravovat oblasti | — | — | — | — | ✓ |
+| Nastavit omezení správcům (oblasti, firmy) | — | — | — | — | ✓ |
 
 ¹ V rámci nastaveného omezení oblasti a firem správce (pokud není omezení nastaveno, platí pro všechny tikety).
 
@@ -167,7 +173,7 @@ Požadavky zakládá žadatel a musí vyplnit
 
 - Popis
 
-- Oblast (IT, Helios, Neznámá)
+- Oblast (výběr z administrátorem definovaných oblastí)
 
 - Prioritu (Vysoká, Střední, Nízká)
 
@@ -180,7 +186,7 @@ adresu. V takovém případě se požadavek založí následovně:
 
 - Popis = Tělo e-mailu
 
-- Oblast = Neznámá
+- Oblast = oblast označená jako neznámá (pokud existuje)
 
 - Priorita = Střední
 
@@ -275,17 +281,16 @@ volitelné.
 | Požadavek vyřešen | Žadatel | Název, stav „Vyřešeno", způsob vyřešení |
 | Požadavek zamítnut | Žadatel | Název, stav „Zamítnuto", důvod zamítnutí |
 
-¹ **Výběr oprávněných správců** se řídí jejich omezeními oblasti a firem:
+¹ **Výběr oprávněných správců** se řídí jejich omezeními oblastí a firem:
 
 - Správce bez omezení dostane notifikaci vždy.
-- Správce s omezením oblasti dostane notifikaci pouze o požadavcích
-  dané oblasti. Požadavky s oblastí „Neznámá" oblast-filtr přeskočí
-  (dostane notifikaci každý správce s odpovídajícím omezením firem nebo
-  bez omezení firem).
+- Správce s omezením oblastí dostane notifikaci pouze o požadavcích
+  jedné z jeho oblastí. Požadavky s oblastí označenou jako neznámou
+  nebo bez oblasti oblast-filtr přeskočí (rozhoduje pouze omezení firem).
 - Správce s omezením firem dostane notifikaci pouze o požadavcích
   daných firem.
-- Správce s oběma omezeními musí požadavek splňovat zároveň oblast
-  i firmu.
+- Správce s oběma omezeními musí požadavek splňovat zároveň jednu
+  z oblastí i jednu z firem.
 
 ## Přehled požadavků
 

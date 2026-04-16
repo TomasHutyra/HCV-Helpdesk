@@ -41,7 +41,7 @@
         {% include 'tickets/partials/type_badge.html' with ticket=ticket %}
         {% include 'tickets/partials/status_badge.html' with ticket=ticket %}
         {% include 'tickets/partials/priority_badge.html' with ticket=ticket %}
-        <span class="badge" style="background:var(--c-bg);color:var(--c-text-muted)">{{ ticket.get_area_display }}</span>
+        <span class="badge" style="background:var(--c-bg);color:var(--c-text-muted)">{{ ticket.area|default:'—' }}</span>
       </div>
       <p class="ticket-description">{{ ticket.description }}</p>
     </div>

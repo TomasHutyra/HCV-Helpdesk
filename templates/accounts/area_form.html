@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% if object %}{% trans "Upravit oblast" %}{% else %}{% trans "Nová oblast" %}{% endif %} — HCV Helpdesk{% endblock %}
+{% block nav_areas %}active{% endblock %}
+{% block topbar_title %}{% if object %}{% trans "Upravit oblast" %}{% else %}{% trans "Nová oblast" %}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <a href="{% url 'accounts:area_list' %}">{% trans "Oblasti" %}</a>
+  <span class="breadcrumb-sep">/</span>
+  <span>{% if object %}{{ object }}{% else %}{% trans "Nová" %}{% endif %}</span>
+</div>
+
+<h1 class="page-title" style="margin-bottom:18px">
+  {% if object %}{% trans "Upravit oblast" %}{% else %}{% trans "Nová oblast" %}{% endif %}
+</h1>
+
+<div style="max-width:400px">
+  <div class="card card-body">
+    <form method="post" class="form-stack">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div style="font-size:12px;color:var(--c-text-muted);margin-top:4px">{{ field.help_text }}</div>{% endif %}
+        {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      <div style="display:flex;gap:8px;padding-top:4px">
+        <button type="submit" class="btn btn-primary">{% trans "Uložit" %}</button>
+        <a href="{% url 'accounts:area_list' %}" class="btn btn-secondary">{% trans "Zpět" %}</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

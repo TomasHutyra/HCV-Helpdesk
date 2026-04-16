@@ -56,8 +56,9 @@
       <div class="form-group">
         <label class="form-label">{{ form.area.label }} *</label>
         <select name="area">
-          {% for val, label in form.fields.area.choices %}
-          <option value="{{ val }}" {% if form.area.value == val %}selected{% endif %}>{{ label }}</option>
+          <option value="">— {% trans "vyberte oblast" %} —</option>
+          {% for area in form.fields.area.queryset %}
+          <option value="{{ area.pk }}" {% if form.area.value|stringformat:"s" == area.pk|stringformat:"s" %}selected{% endif %}>{{ area.name }}</option>
           {% endfor %}
         </select>
       </div>

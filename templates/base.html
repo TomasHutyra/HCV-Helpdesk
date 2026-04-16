@@ -81,6 +81,12 @@
           </svg>
           {% trans "Firmy" %}
         </a>
+        <a href="{% url 'accounts:area_list' %}" class="sidebar-link {% block nav_areas %}{% endblock %}" @click="sidebarOpen = false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          {% trans "Oblasti" %}
+        </a>
       </div>
       {% endif %}
     </nav>

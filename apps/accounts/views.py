@@ -9,8 +9,9 @@ from django.utils.translation import gettext as _
 from django.views.generic import ListView, CreateView, UpdateView, TemplateView
 
 from .decorators import role_required
-from .forms import LoginForm, UserCreateForm, UserUpdateForm, ProfileForm, CompanyForm
+from .forms import LoginForm, UserCreateForm, UserUpdateForm, ProfileForm, CompanyForm, AreaForm
 from .models import User, Company, UserRole
+from apps.tickets.models import Area
 
 
 class CustomLoginView(LoginView):
@@ -137,4 +138,50 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         messages.success(self.request, _('Firma byla uložena.'))
+        return super().form_valid(form)
+
+
+class AreaListView(LoginRequiredMixin, ListView):
+    model = Area
+    template_name = 'accounts/area_list.html'
+    context_object_name = 'areas'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.has_role(UserRole.ADMIN):
+            messages.error(request, _('Nemáte oprávnění.'))
+            return redirect('tickets:list')
+        return super().dispatch(request, *args, **kwargs)
+
+
+class AreaCreateView(LoginRequiredMixin, CreateView):
+    model = Area
+    form_class = AreaForm
+    template_name = 'accounts/area_form.html'
+    success_url = reverse_lazy('accounts:area_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.has_role(UserRole.ADMIN):
+            messages.error(request, _('Nemáte oprávnění.'))
+            return redirect('tickets:list')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        messages.success(self.request, _('Oblast byla vytvořena.'))
+        return super().form_valid(form)
+
+
+class AreaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Area
+    form_class = AreaForm
+    template_name = 'accounts/area_form.html'
+    success_url = reverse_lazy('accounts:area_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.has_role(UserRole.ADMIN):
+            messages.error(request, _('Nemáte oprávnění.'))
+            return redirect('tickets:list')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        messages.success(self.request, _('Oblast byla uložena.'))
         return super().form_valid(form)

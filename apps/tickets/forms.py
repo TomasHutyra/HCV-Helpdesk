@@ -1,6 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import Ticket, Comment, TimeLog
+from .models import Ticket, Comment, TimeLog, Area
 
 
 class TicketCreateForm(forms.ModelForm):
@@ -127,9 +127,10 @@ class TicketFilterForm(forms.Form):
         choices=[('', _('— vše —'))] + Ticket.TYPE_CHOICES,
         required=False, label=_('Typ'),
     )
-    area = forms.ChoiceField(
-        choices=[('', _('— vše —'))] + Ticket.AREA_CHOICES,
+    area = forms.ModelChoiceField(
+        queryset=Area.objects.all(),
         required=False, label=_('Oblast'),
+        empty_label=_('— vše —'),
     )
     priority = forms.ChoiceField(
         choices=[('', _('— vše —'))] + Ticket.PRIORITY_CHOICES,

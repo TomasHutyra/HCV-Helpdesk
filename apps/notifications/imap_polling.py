@@ -45,12 +45,12 @@ def _find_user_by_email(from_email):
 
 
 def _create_ticket_from_email(subject, body, requester):
-    from apps.tickets.models import Ticket
+    from apps.tickets.models import Ticket, Area
     ticket = Ticket.objects.create(
         type=Ticket.TYPE_PROBLEM,
         title=subject[:200] or '(bez předmětu)',
         description=body or '(prázdné tělo e-mailu)',
-        area=Ticket.AREA_UNKNOWN,
+        area=Area.get_unknown(),
         priority=Ticket.PRIORITY_MEDIUM,
         company=requester.company,
         requester=requester,

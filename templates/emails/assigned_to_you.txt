@@ -3,7 +3,7 @@ Byl vám přiřazen tiket k řešení.
 Tiket #{{ ticket.pk }}: {{ ticket.title }}
 ----------------------------------------------
 Typ: {{ ticket.get_type_display }}
-Oblast: {{ ticket.get_area_display }}
+Oblast: {{ ticket.area }}
 Priorita: {{ ticket.get_priority_display }}
 Stav: {{ ticket.get_status_display }}
 Firma: {{ ticket.company }}

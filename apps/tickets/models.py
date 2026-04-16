@@ -4,6 +4,28 @@ from django.utils.translation import gettext_lazy as _
 from django_fsm import FSMField, transition
 
 
+class Area(models.Model):
+    name = models.CharField(_('název'), max_length=100)
+    is_unknown = models.BooleanField(
+        _('neznámá oblast'), default=False,
+        help_text=_('Tikety s touto oblastí nejsou omezeny oblastí správce.'),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('oblast')
+        verbose_name_plural = _('oblasti')
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    def get_unknown(cls):
+        """Vrátí oblast označenou jako neznámá (pro e-mailové tikety)."""
+        return cls.objects.filter(is_unknown=True).first()
+
+
 class Ticket(models.Model):
     # --- Typy tiketů ---
     TYPE_PROBLEM = 'problem'
@@ -38,17 +60,6 @@ class Ticket(models.Model):
         TYPE_IMPROVEMENT: {STATUS_NEW, STATUS_REJECTED},
     }
 
-    # --- Oblast ---
-    AREA_IT = 'it'
-    AREA_HELIOS = 'helios'
-    AREA_UNKNOWN = 'unknown'
-
-    AREA_CHOICES = [
-        (AREA_IT, 'IT'),
-        (AREA_HELIOS, 'Helios'),
-        (AREA_UNKNOWN, _('Neznámá')),
-    ]
-
     # --- Priorita ---
     PRIORITY_HIGH = 'high'
     PRIORITY_MEDIUM = 'medium'
@@ -64,7 +75,11 @@ class Ticket(models.Model):
     type = models.CharField(_('typ'), max_length=20, choices=TYPE_CHOICES)
     title = models.CharField(_('název'), max_length=200)
     description = models.TextField(_('popis'))
-    area = models.CharField(_('oblast'), max_length=20, choices=AREA_CHOICES, default=AREA_UNKNOWN)
+    area = models.ForeignKey(
+        'Area', on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='tickets', verbose_name=_('oblast'),
+    )
     priority = models.CharField(_('priorita'), max_length=10, choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM)
     status = FSMField(_('stav'), default=STATUS_NEW, protected=True, choices=STATUS_CHOICES)
 

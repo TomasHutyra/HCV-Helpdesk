@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Oblasti" %} — HCV Helpdesk{% endblock %}
+{% block nav_areas %}active{% endblock %}
+{% block topbar_title %}{% trans "Oblasti" %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">{% trans "Oblasti" %}</h1>
+  <a href="{% url 'accounts:area_create' %}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    {% trans "Nová oblast" %}
+  </a>
+</div>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>{% trans "Název oblasti" %}</th>
+        <th>{% trans "Neznámá" %}</th>
+        <th>{% trans "Tiketů" %}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for area in areas %}
+      <tr>
+        <td style="font-weight:600">{{ area.name }}</td>
+        <td>
+          {% if area.is_unknown %}
+          <span style="color:var(--c-text-muted);font-size:13px">{% trans "Ano" %}</span>
+          {% else %}
+          <span style="color:var(--c-text-light);font-size:13px">—</span>
+          {% endif %}
+        </td>
+        <td style="color:var(--c-text-muted)">{{ area.tickets.count }}</td>
+        <td style="text-align:right">
+          <a href="{% url 'accounts:area_update' area.pk %}" class="btn btn-secondary btn-sm">{% trans "Upravit" %}</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" style="padding:28px;text-align:center;color:var(--c-text-light)">{% trans "Žádné oblasti." %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

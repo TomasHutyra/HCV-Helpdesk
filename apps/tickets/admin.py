@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import Ticket, Comment, TimeLog
+from .models import Ticket, Comment, TimeLog, Area
+
+
+@admin.register(Area)
+class AreaAdmin(admin.ModelAdmin):
+    list_display = ('name', 'is_unknown', 'created_at')
+    list_filter = ('is_unknown',)
 
 
 class CommentInline(admin.TabularInline):
