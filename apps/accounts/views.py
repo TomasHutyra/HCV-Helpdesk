@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordChangeView as DjangoPasswordChangeView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -43,6 +43,16 @@ class ProfileView(LoginRequiredMixin, UpdateView):
         translation.activate(lang)
         response.set_cookie(settings.LANGUAGE_COOKIE_NAME, lang)
         messages.success(self.request, _('Profil byl uložen.'))
+        return response
+
+
+class PasswordChangeView(DjangoPasswordChangeView):
+    template_name = 'accounts/password_change.html'
+    success_url = reverse_lazy('accounts:profile')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, _('Heslo bylo změněno.'))
         return response
 
 

@@ -8,6 +8,7 @@ urlpatterns = [
     path('login/', views.CustomLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('password/', views.PasswordChangeView.as_view(), name='password_change'),
     # Správa uživatelů (Administrátor)
     path('users/', views.UserListView.as_view(), name='user_list'),
     path('users/new/', views.UserCreateView.as_view(), name='user_create'),

@@ -34,5 +34,13 @@
       </div>
     </form>
   </div>
+
+  <div class="card card-body" style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-weight:600;font-size:14px">{% trans "Heslo" %}</div>
+      <div style="font-size:13px;color:var(--c-text-muted)">{% trans "Změňte své přihlašovací heslo." %}</div>
+    </div>
+    <a href="{% url 'accounts:password_change' %}" class="btn btn-secondary" style="white-space:nowrap">{% trans "Změnit heslo" %}</a>
+  </div>
 </div>
 {% endblock %}
