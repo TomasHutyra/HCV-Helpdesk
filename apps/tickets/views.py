@@ -109,6 +109,10 @@ class TicketListView(LoginRequiredMixin, ListView):
                 qs = qs.filter(
                     db_models.Q(title__icontains=q) | db_models.Q(description__icontains=q)
                 )
+            if form.cleaned_data.get('date_from'):
+                qs = qs.filter(created_at__date__gte=form.cleaned_data['date_from'])
+            if form.cleaned_data.get('date_to'):
+                qs = qs.filter(created_at__date__lte=form.cleaned_data['date_to'])
 
         if user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN):
             qs = qs.annotate(hours_sum=db_models.Sum('time_logs__hours'))

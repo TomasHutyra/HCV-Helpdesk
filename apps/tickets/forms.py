@@ -136,6 +136,16 @@ class TicketFilterForm(forms.Form):
         choices=[('', _('— vše —'))] + Ticket.PRIORITY_CHOICES,
         required=False, label=_('Priorita'),
     )
+    date_from = forms.DateField(
+        required=False, label=_('Vytvořeno od'),
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        input_formats=['%Y-%m-%d'],
+    )
+    date_to = forms.DateField(
+        required=False, label=_('Vytvořeno do'),
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        input_formats=['%Y-%m-%d'],
+    )
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)

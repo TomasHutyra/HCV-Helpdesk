@@ -36,6 +36,7 @@
 {# Filter bar #}
 <form method="get" class="filter-bar">
   {% for field in filter_form %}
+  {% if field.html_name != 'date_from' and field.html_name != 'date_to' %}
   <div class="filter-field">
     <label>{{ field.label }}</label>
     <select name="{{ field.html_name }}">
@@ -44,7 +45,16 @@
       {% endfor %}
     </select>
   </div>
+  {% endif %}
   {% endfor %}
+  <div class="filter-field" style="min-width:130px">
+    <label>{% trans "Vytvořeno od" %}</label>
+    <input type="date" name="date_from" value="{{ request.GET.date_from|default:'' }}">
+  </div>
+  <div class="filter-field" style="min-width:130px">
+    <label>{% trans "Vytvořeno do" %}</label>
+    <input type="date" name="date_to" value="{{ request.GET.date_to|default:'' }}">
+  </div>
   <div class="filter-field" style="min-width:160px">
     <label>{% trans "Hledat" %}</label>
     <input type="text" name="search" value="{{ request.GET.search|default:'' }}" placeholder="{% trans 'Název, popis…' %}">

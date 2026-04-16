@@ -303,6 +303,7 @@ sloupec Hodiny (součet všech zaznamenaných hodin k danému požadavku).
 ### Filtry
 
 Všichni uživatelé mohou filtrovat podle: Stav, Typ, Oblast, Priorita,
+Vytvořeno od, Vytvořeno do (výběr konkrétního data nebo rozsahu),
 a textového vyhledávání v názvu a popisu.
 
 Správce a administrátor mohou navíc filtrovat podle: Firma, Žadatel,
