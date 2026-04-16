@@ -475,6 +475,7 @@ button { font-family: inherit; }
 
 .btn-primary  { background: var(--c-amber); color: #fff; }
 .btn-primary:hover  { background: var(--c-amber-hover); }
+.btn-primary:disabled, .btn-primary[disabled] { background: var(--c-border); color: var(--c-text-light); cursor: not-allowed; }
 
 .btn-secondary { background: var(--c-bg); color: var(--c-text-muted); border: 1px solid var(--c-border); }
 .btn-secondary:hover { background: var(--c-border-subtle); color: var(--c-text); border-color: #d4cfc8; }

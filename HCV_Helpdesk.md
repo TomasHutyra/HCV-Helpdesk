@@ -50,9 +50,14 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
   - Řešitel požadavku
 
-  - Vidí všechny požadavky, které mu byly přiřazeny
+  - Vidí všechny požadavky, které mu byly přiřazeny, a navíc všechny
+    požadavky ve stavu „Nový"
 
-  - Může komentovat přiřazené požadavky
+  - Může komentovat přiřazené požadavky (požadavky ve stavu „Nový",
+    které mu dosud nebyly přiřazeny, komentovat nemůže)
+
+  - Může převzít požadavek ve stavu „Nový" — přiřadí se sám sobě
+    a požadavek přejde do stavu „Řeší se"
 
   - Může změnit typ požadavku, prioritu, oblast a stav požadavku
 
@@ -119,8 +124,8 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | Funkce | Žadatel | Řešitel | Obchodník | Správce | Administrátor |
 |--------|:-------:|:-------:|:---------:|:-------:|:-------------:|
 | **Tikety — čtení** | | | | | |
-| Vidí seznam tiketů | jen vlastní | jen přiřazené | jen přiřazené | všechny ¹ | všechny |
-| Vidí detail tiketu | jen vlastní | jen přiřazený | jen přiřazený | všechny ¹ | všechny |
+| Vidí seznam tiketů | jen vlastní | přiřazené + všechny Nové ⁴ | jen přiřazené | všechny ¹ | všechny |
+| Vidí detail tiketu | jen vlastní | přiřazený + každý Nový ⁴ | jen přiřazený | všechny ¹ | všechny |
 | Vidí záznamy času a celkové hodiny | — | ✓ | ✓ | ✓ | — |
 | **Tikety — vytvoření a editace** | | | | | |
 | Vytvořit tiket | ✓ | — | — | ✓ | — |
@@ -130,6 +135,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | Komentovat tiket | jen vlastní | přiřazený | přiřazený | ✓ ¹ | — |
 | Zapsat čas | — | přiřazený | přiřazený | jen pokud přiřazen ³ | — |
 | **Tikety — akce** | | | | | |
+| Převzít tiket (přiřadit se sám sobě) | — | Nový ⁴ | — | — | — |
 | Přiřadit řešitele | — | — | — | ✓ ¹ | — |
 | Přiřadit obchodníka | — | — | — | ✓ ¹ | — |
 | Vyřešit tiket | — | přiřazený | — | ✓ ¹ | — |
@@ -148,6 +154,8 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 ² Nelze v uzamčeném stavu — „Vyřešeno" nebo „Zamítnuto".
 
 ³ Správce smí zapisovat čas průběžně pouze tehdy, je-li k danému tiketu zároveň přiřazen jako řešitel nebo obchodník.
+
+⁴ Řešitel vidí (a může převzít) všechny tikety ve stavu „Nový", ale komentovat je může až po přiřazení.
 
 ## Požadavky
 

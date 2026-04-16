@@ -144,6 +144,17 @@
     </div>
     {% endif %}
 
+    {# Take ticket (resolver only, status new) #}
+    {% if is_resolver and ticket.status == 'new' and ticket.resolver != request.user %}
+    <div class="card card-body-sm">
+      <div class="panel-title">{% trans "Převzít tiket" %}</div>
+      <form method="post" action="{% url 'tickets:take' ticket.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sky btn-full">{% trans "Převzít a začít řešit" %}</button>
+      </form>
+    </div>
+    {% endif %}
+
     {# Resolve #}
     {% if ticket.status == 'in_progress' %}
     {% if is_manager or is_resolver and ticket.resolver == request.user %}

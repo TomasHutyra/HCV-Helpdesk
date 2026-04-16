@@ -27,7 +27,7 @@ def _get_adjacent_tickets(user, ticket):
         if q is not None:
             qs = qs.filter(q)
     elif user.has_role(UserRole.RESOLVER):
-        qs = qs.filter(resolver=user)
+        qs = qs.filter(db_models.Q(resolver=user) | db_models.Q(status=Ticket.STATUS_NEW))
     elif user.has_role(UserRole.SALES):
         qs = qs.filter(sales=user)
     elif user.has_role(UserRole.REQUESTER):
@@ -79,7 +79,7 @@ class TicketListView(LoginRequiredMixin, ListView):
             if q is not None:
                 qs = qs.filter(q)
         elif user.has_role(UserRole.RESOLVER):
-            qs = qs.filter(resolver=user)
+            qs = qs.filter(db_models.Q(resolver=user) | db_models.Q(status=Ticket.STATUS_NEW))
         elif user.has_role(UserRole.SALES):
             qs = qs.filter(sales=user)
         elif user.has_role(UserRole.REQUESTER):
@@ -139,7 +139,7 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
                 return ticket
             messages.error(self.request, _('Nemáte přístup k tomuto tiketu.'))
             raise PermissionError()
-        if user.has_role(UserRole.RESOLVER) and ticket.resolver == user:
+        if user.has_role(UserRole.RESOLVER) and (ticket.resolver == user or ticket.status == Ticket.STATUS_NEW):
             return ticket
         if user.has_role(UserRole.SALES) and ticket.sales == user:
             return ticket
@@ -171,6 +171,18 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         ctx['assign_sales_form'] = AssignSalesForm(instance=ticket)
         ctx['change_type_form'] = ChangeTypeForm(instance=ticket)
         ctx['can_edit'] = _can_edit_ticket(user, ticket)
+        if user.has_role(UserRole.ADMIN):
+            ctx['can_comment'] = True
+        elif user.has_role(UserRole.MANAGER):
+            ctx['can_comment'] = user.can_see_ticket_as_manager(ticket)
+        elif user.has_role(UserRole.RESOLVER):
+            ctx['can_comment'] = ticket.resolver == user
+        elif user.has_role(UserRole.SALES):
+            ctx['can_comment'] = ticket.sales == user
+        elif user.has_role(UserRole.REQUESTER):
+            ctx['can_comment'] = ticket.requester == user
+        else:
+            ctx['can_comment'] = False
         ctx['show_hours'] = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
         ctx['has_timelogs'] = ticket.time_logs.exists()
         prev_pk, next_pk = _get_adjacent_tickets(user, ticket)
@@ -284,6 +296,25 @@ class AssignSalesView(LoginRequiredMixin, View):
                 from apps.notifications.tasks import notify_assigned_to_sales
                 notify_assigned_to_sales.delay(ticket.pk)
             messages.success(request, _('Obchodník byl přiřazen.'))
+        return redirect('tickets:detail', pk=pk)
+
+
+class TakeTicketView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        ticket = get_object_or_404(Ticket, pk=pk)
+        if not request.user.has_role(UserRole.RESOLVER):
+            messages.error(request, _('Nedostatečná oprávnění.'))
+            return redirect('tickets:detail', pk=pk)
+        if ticket.status != Ticket.STATUS_NEW:
+            messages.error(request, _('Tiket již nelze převzít.'))
+            return redirect('tickets:detail', pk=pk)
+        ticket.resolver = request.user
+        ticket.to_in_progress()
+        ticket.save()
+        from apps.notifications.tasks import notify_status_change, notify_assigned_to_resolver
+        notify_status_change.delay(ticket.pk)
+        notify_assigned_to_resolver.delay(ticket.pk)
+        messages.success(request, _('Tiket byl převzat.'))
         return redirect('tickets:detail', pk=pk)
 
 
@@ -407,6 +438,7 @@ class AddCommentView(LoginRequiredMixin, View):
                     'ticket': ticket,
                     'comments': ticket.comments.select_related('author').all(),
                     'comment_form': CommentForm(),
+                    'can_comment': can_comment,
                 })
         return redirect('tickets:detail', pk=pk)
 

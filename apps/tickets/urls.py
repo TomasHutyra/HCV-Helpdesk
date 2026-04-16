@@ -15,6 +15,7 @@ urlpatterns = [
     path('<int:pk>/reject/', views.RejectView.as_view(), name='reject'),
     path('<int:pk>/reopen/', views.ReopenView.as_view(), name='reopen'),
     path('<int:pk>/change-type/', views.ChangeTypeView.as_view(), name='change_type'),
+    path('<int:pk>/take/', views.TakeTicketView.as_view(), name='take'),
     path('<int:pk>/comment/', views.AddCommentView.as_view(), name='add_comment'),
     path('<int:pk>/timelog/', views.AddTimeLogView.as_view(), name='add_timelog'),
 ]

@@ -30,9 +30,9 @@
           hx-target="#comments-section" hx-swap="innerHTML"
           class="form-stack">
       {% csrf_token %}
-      <textarea name="body" rows="3" required placeholder="{% trans 'Napište komentář…' %}"></textarea>
+      <textarea name="body" rows="3" {% if not can_comment %}disabled{% endif %} required placeholder="{% trans 'Napište komentář…' %}"></textarea>
       <div>
-        <button type="submit" class="btn btn-primary">{% trans "Odeslat komentář" %}</button>
+        <button type="submit" class="btn btn-primary" {% if not can_comment %}disabled title="{% trans 'Komentovat lze pouze přiřazené tikety.' %}"{% endif %}>{% trans "Odeslat komentář" %}</button>
       </div>
     </form>
   </div>
