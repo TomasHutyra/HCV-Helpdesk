@@ -26,12 +26,12 @@
   <aside class="sidebar" :class="sidebarOpen ? 'open' : ''">
 
     {# Brand #}
-    <div class="sidebar-brand">
+    <a href="{% url 'tickets:list' %}" class="sidebar-brand">
       <div class="sidebar-logo">
         <img src="{% static 'images/logo.png' %}" alt="HCV" class="sidebar-logo-img">
       </div>
       <div class="sidebar-brand-sub">Helpdesk</div>
-    </div>
+    </a>
 
     {# CTA: Nový tiket #}
     {% if is_requester %}

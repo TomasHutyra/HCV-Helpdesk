@@ -103,6 +103,8 @@ button { font-family: inherit; }
   padding: 18px 18px 14px;
   border-bottom: 1px solid var(--c-sidebar-border);
   flex-shrink: 0;
+  display: block;
+  text-decoration: none;
 }
 
 .sidebar-logo {
@@ -1217,7 +1219,7 @@ details.action-panel[open] summary { margin-bottom: 2px; }
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .admin-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
