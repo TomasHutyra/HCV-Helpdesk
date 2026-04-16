@@ -21,5 +21,8 @@ for i in range(30):
 echo "Migrace..."
 python manage.py migrate --settings=helpdesk.settings.production
 
+echo "Sbírám statické soubory..."
+python manage.py collectstatic --noinput --settings=helpdesk.settings.production
+
 echo "Spouštím $@..."
 exec "$@"
