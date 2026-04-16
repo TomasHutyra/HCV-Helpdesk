@@ -94,6 +94,7 @@
           <th>{% trans "Typ" %}</th>
           <th>{% trans "Stav" %}</th>
           <th>{% trans "Priorita" %}</th>
+          <th>{% trans "Oblast" %}</th>
           <th>{% trans "Firma" %}</th>
           {% if is_manager %}<th>{% trans "Řešitel" %}</th>{% endif %}
           {% if show_hours %}<th style="text-align:right">{% trans "Hodiny" %}</th>{% endif %}
@@ -108,6 +109,7 @@
           <td>{% include 'tickets/partials/type_badge.html' with ticket=ticket %}</td>
           <td>{% include 'tickets/partials/status_badge.html' with ticket=ticket %}</td>
           <td>{% include 'tickets/partials/priority_badge.html' with ticket=ticket %}</td>
+          <td class="ticket-muted">{{ ticket.area.name|default:'—' }}</td>
           <td class="ticket-muted">{{ ticket.company.name }}</td>
           {% if is_manager %}<td class="ticket-muted">{{ ticket.resolver|default:'—' }}</td>{% endif %}
           {% if show_hours %}<td class="ticket-hours">{% if ticket.hours_sum %}{{ ticket.hours_sum }} h{% else %}—{% endif %}</td>{% endif %}

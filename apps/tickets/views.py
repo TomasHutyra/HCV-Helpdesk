@@ -101,7 +101,7 @@ class TicketListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Ticket.objects.select_related('requester', 'resolver', 'sales', 'company')
+        qs = Ticket.objects.select_related('requester', 'resolver', 'sales', 'company', 'area')
 
         if user.has_role(UserRole.ADMIN):
             pass
