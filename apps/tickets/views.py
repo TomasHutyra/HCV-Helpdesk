@@ -17,7 +17,26 @@ from .forms import (
     ResolveForm, RejectForm, ChangeTypeForm, CommentForm, TimeLogForm,
     TicketFilterForm, AttachmentUploadForm,
 )
-from .models import Ticket, Comment, TimeLog, TicketAttachment, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
+from .models import Ticket, Comment, TimeLog, TicketAttachment, TicketChange, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
+
+
+def _log_change(ticket, user, field, old_value='', new_value=''):
+    TicketChange.objects.create(
+        ticket=ticket, user=user, field=field,
+        old_value=str(old_value), new_value=str(new_value),
+    )
+
+
+def _status_label(value):
+    return str(dict(Ticket.STATUS_CHOICES).get(value, value))
+
+
+def _type_label(value):
+    return str(dict(Ticket.TYPE_CHOICES).get(value, value))
+
+
+def _priority_label(value):
+    return str(dict(Ticket.PRIORITY_CHOICES).get(value, value))
 
 
 def _validate_upload(f):
@@ -321,8 +340,14 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
             ctx['can_comment'] = ticket.requester == user
         else:
             ctx['can_comment'] = False
-        ctx['show_hours'] = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
+        show_hours = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
+        ctx['show_hours'] = show_hours
         ctx['has_timelogs'] = ticket.time_logs.exists()
+        # Historie změn — interní pole skryta před žadatelem
+        history_qs = ticket.history.select_related('user').all()
+        if not show_hours:
+            history_qs = history_qs.exclude(field__in=TicketChange.INTERNAL_FIELDS)
+        ctx['ticket_history'] = history_qs
         prev_pk, next_pk = _get_adjacent_tickets(user, ticket)
         ctx['prev_ticket_pk'] = prev_pk
         ctx['next_ticket_pk'] = next_pk
@@ -365,6 +390,7 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
 
         ticket.save()
+        _log_change(ticket, self.request.user, TicketChange.FIELD_CREATED)
 
         # Zpracování příloh (volitelné, multiple file input)
         for f in self.request.FILES.getlist('files'):
@@ -378,6 +404,8 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
                 original_name=f.name,
                 uploaded_by=self.request.user,
             )
+            _log_change(ticket, self.request.user, TicketChange.FIELD_ATTACHMENT_ADDED,
+                        new_value=f.name)
 
         from apps.notifications.tasks import notify_new_ticket
         notify_new_ticket.delay(ticket.pk)
@@ -399,12 +427,29 @@ class TicketUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         old_type = self.object.type
+        old_priority = self.object.priority
+        old_area_id = self.object.area_id
+        old_area_name = str(self.object.area) if self.object.area else '—'
+
         ticket = form.save(commit=False)
+
         if old_type != ticket.type:
             ticket.save()
             ticket.change_type(ticket.type)
         else:
             ticket.save()
+
+        user = self.request.user
+        if old_type != ticket.type:
+            _log_change(ticket, user, TicketChange.FIELD_TYPE,
+                        _type_label(old_type), _type_label(ticket.type))
+        if old_priority != ticket.priority:
+            _log_change(ticket, user, TicketChange.FIELD_PRIORITY,
+                        _priority_label(old_priority), _priority_label(ticket.priority))
+        if old_area_id != ticket.area_id:
+            new_area_name = str(ticket.area) if ticket.area else '—'
+            _log_change(ticket, user, TicketChange.FIELD_AREA, old_area_name, new_area_name)
+
         messages.success(self.request, _('Tiket byl uložen.'))
         return redirect('tickets:detail', pk=ticket.pk)
 
@@ -418,6 +463,8 @@ class AssignResolverView(LoginRequiredMixin, View):
         ticket = get_object_or_404(Ticket, pk=pk)
         if not _manager_has_ticket_access(request.user, ticket):
             return HttpResponse(_('Nedostatečná oprávnění.'), status=403)
+        old_resolver = ticket.resolver
+        old_status = ticket.status
         form = AssignResolverForm(request.POST, instance=ticket)
         if form.is_valid():
             ticket = form.save(commit=False)
@@ -431,6 +478,11 @@ class AssignResolverView(LoginRequiredMixin, View):
                 ticket.save()
                 from apps.notifications.tasks import notify_assigned_to_resolver
                 notify_assigned_to_resolver.delay(ticket.pk)
+            _log_change(ticket, request.user, TicketChange.FIELD_RESOLVER,
+                        str(old_resolver) if old_resolver else '', str(ticket.resolver) if ticket.resolver else '')
+            if old_status != ticket.status:
+                _log_change(ticket, request.user, TicketChange.FIELD_STATUS,
+                            _status_label(old_status), _status_label(ticket.status))
             messages.success(request, _('Řešitel byl přiřazen.'))
         return redirect('tickets:detail', pk=pk)
 
@@ -443,6 +495,8 @@ class AssignSalesView(LoginRequiredMixin, View):
         if ticket.type != Ticket.TYPE_DEVELOPMENT:
             messages.error(request, _('Obchodníka lze přiřadit pouze k typu „Požadavek na vývoj".'))
             return redirect('tickets:detail', pk=pk)
+        old_sales = ticket.sales
+        old_status = ticket.status
         form = AssignSalesForm(request.POST, instance=ticket)
         if form.is_valid():
             ticket = form.save(commit=False)
@@ -456,6 +510,11 @@ class AssignSalesView(LoginRequiredMixin, View):
                 ticket.save()
                 from apps.notifications.tasks import notify_assigned_to_sales
                 notify_assigned_to_sales.delay(ticket.pk)
+            _log_change(ticket, request.user, TicketChange.FIELD_SALES,
+                        str(old_sales) if old_sales else '', str(ticket.sales) if ticket.sales else '')
+            if old_status != ticket.status:
+                _log_change(ticket, request.user, TicketChange.FIELD_STATUS,
+                            _status_label(old_status), _status_label(ticket.status))
             messages.success(request, _('Obchodník byl přiřazen.'))
         return redirect('tickets:detail', pk=pk)
 
@@ -469,12 +528,17 @@ class TakeTicketView(LoginRequiredMixin, View):
         if ticket.status != Ticket.STATUS_NEW:
             messages.error(request, _('Tiket již nelze převzít.'))
             return redirect('tickets:detail', pk=pk)
+        old_status = ticket.status
         ticket.resolver = request.user
         ticket.to_in_progress()
         ticket.save()
         from apps.notifications.tasks import notify_status_change, notify_assigned_to_resolver
         notify_status_change.delay(ticket.pk)
         notify_assigned_to_resolver.delay(ticket.pk)
+        _log_change(ticket, request.user, TicketChange.FIELD_RESOLVER,
+                    '', str(request.user))
+        _log_change(ticket, request.user, TicketChange.FIELD_STATUS,
+                    _status_label(old_status), _status_label(ticket.status))
         messages.success(request, _('Tiket byl převzat.'))
         return redirect('tickets:detail', pk=pk)
 
@@ -495,9 +559,12 @@ class ResolveView(LoginRequiredMixin, View):
             if not hours_str and not ticket.time_logs.exists():
                 messages.error(request, _('Zadejte počet odpracovaných hodin.'))
                 return redirect('tickets:detail', pk=pk)
+            old_status = ticket.status
             ticket = form.save(commit=False)
             ticket.to_resolved()
             ticket.save()
+            _log_change(ticket, request.user, TicketChange.FIELD_STATUS,
+                        _status_label(old_status), _status_label(ticket.status))
             if hours_str:
                 try:
                     hours = float(hours_str)
@@ -520,11 +587,14 @@ class RejectView(LoginRequiredMixin, View):
         if not _manager_has_ticket_access(request.user, ticket):
             messages.error(request, _('Nedostatečná oprávnění.'))
             return redirect('tickets:detail', pk=pk)
+        old_status = ticket.status
         form = RejectForm(request.POST, instance=ticket)
         if form.is_valid():
             ticket = form.save(commit=False)
             ticket.to_rejected()
             ticket.save()
+            _log_change(ticket, request.user, TicketChange.FIELD_STATUS,
+                        _status_label(old_status), _status_label(ticket.status))
             from apps.notifications.tasks import notify_ticket_closed
             notify_ticket_closed.delay(ticket.pk, closed_as='rejected')
             messages.success(request, _('Tiket byl zamítnut.'))
@@ -539,12 +609,15 @@ class ReopenView(LoginRequiredMixin, View):
         if not _manager_has_ticket_access(request.user, ticket):
             messages.error(request, _('Nedostatečná oprávnění.'))
             return redirect('tickets:detail', pk=pk)
+        old_status = ticket.status
         target = request.POST.get('target', 'in_progress')
         if target == 'offer_prep' and ticket.type == Ticket.TYPE_DEVELOPMENT:
             ticket.reopen_to_offer_prep()
         else:
             ticket.reopen_to_in_progress()
         ticket.save()
+        _log_change(ticket, request.user, TicketChange.FIELD_STATUS,
+                    _status_label(old_status), _status_label(ticket.status))
         messages.success(request, _('Tiket byl znovuotevřen.'))
         return redirect('tickets:detail', pk=pk)
 
@@ -561,7 +634,10 @@ class ChangeTypeView(LoginRequiredMixin, View):
             return redirect('tickets:detail', pk=pk)
         form = ChangeTypeForm(request.POST, instance=ticket)
         if form.is_valid():
+            old_type = ticket.type
             ticket.change_type(form.cleaned_data['type'])
+            _log_change(ticket, request.user, TicketChange.FIELD_TYPE,
+                        _type_label(old_type), _type_label(ticket.type))
             messages.success(request, _('Typ tiketu byl změněn.'))
         return redirect('tickets:detail', pk=pk)
 
@@ -627,6 +703,8 @@ class AddAttachmentView(LoginRequiredMixin, View):
                 original_name=f.name,
                 uploaded_by=request.user,
             )
+            _log_change(ticket, request.user, TicketChange.FIELD_ATTACHMENT_ADDED,
+                        new_value=f.name)
 
         if request.htmx:
             attachments = ticket.attachments.select_related('uploaded_by').all()
@@ -650,6 +728,7 @@ class DeleteAttachmentView(LoginRequiredMixin, View):
             messages.error(request, _('Nemáte oprávnění smazat tuto přílohu.'))
             return redirect('tickets:detail', pk=pk)
 
+        original_name = attachment.original_name
         # Smazat fyzický soubor
         try:
             if attachment.file and os.path.isfile(attachment.file.path):
@@ -657,6 +736,8 @@ class DeleteAttachmentView(LoginRequiredMixin, View):
         except (ValueError, OSError):
             pass
         attachment.delete()
+        _log_change(ticket, request.user, TicketChange.FIELD_ATTACHMENT_DELETED,
+                    new_value=original_name)
 
         if request.htmx:
             attachments = ticket.attachments.select_related('uploaded_by').all()

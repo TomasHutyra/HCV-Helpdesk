@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Ticket, Comment, TimeLog, Area, TicketAttachment
+from .models import Ticket, Comment, TimeLog, Area, TicketAttachment, TicketChange
 
 
 @admin.register(Area)
@@ -33,6 +33,13 @@ class TicketAdmin(admin.ModelAdmin):
     search_fields = ('title', 'description')
     readonly_fields = ('status', 'created_at', 'updated_at', 'resolved_at')
     inlines = [CommentInline, TimeLogInline, AttachmentInline]
+
+
+@admin.register(TicketChange)
+class TicketChangeAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'ticket', 'user', 'field', 'old_value', 'new_value', 'created_at')
+    list_filter = ('field',)
+    readonly_fields = ('ticket', 'user', 'field', 'old_value', 'new_value', 'created_at')
 
 
 @admin.register(Comment)

@@ -251,6 +251,67 @@ class TimeLog(models.Model):
         return f'{self.hours}h — {self.ticket}'
 
 
+class TicketChange(models.Model):
+    """Záznamy o změnách tiketu — audit log."""
+
+    FIELD_CREATED = 'created'
+    FIELD_STATUS = 'status'
+    FIELD_TYPE = 'type'
+    FIELD_PRIORITY = 'priority'
+    FIELD_AREA = 'area'
+    FIELD_RESOLVER = 'resolver'
+    FIELD_SALES = 'sales'
+    FIELD_ATTACHMENT_ADDED = 'attachment_added'
+    FIELD_ATTACHMENT_DELETED = 'attachment_deleted'
+    # Interní pole — skrytá před žadatelem (rezerva pro budoucí záznamy hodin)
+    FIELD_TIMELOG = 'timelog'
+
+    INTERNAL_FIELDS = {FIELD_TIMELOG}
+
+    ticket = models.ForeignKey(
+        Ticket, on_delete=models.CASCADE,
+        related_name='history', verbose_name=_('tiket'),
+    )
+    user = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='ticket_changes', verbose_name=_('uživatel'),
+    )
+    field = models.CharField(_('pole'), max_length=30)
+    old_value = models.CharField(_('původní hodnota'), max_length=300, blank=True)
+    new_value = models.CharField(_('nová hodnota'), max_length=300, blank=True)
+    created_at = models.DateTimeField(_('čas'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('změna tiketu')
+        verbose_name_plural = _('změny tiketu')
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.ticket} — {self.field}'
+
+    @property
+    def description(self):
+        if self.field == self.FIELD_CREATED:
+            return _('Tiket vytvořen')
+        if self.field == self.FIELD_ATTACHMENT_ADDED:
+            return f'{_("Příloha přidána")}: {self.new_value}'
+        if self.field == self.FIELD_ATTACHMENT_DELETED:
+            return f'{_("Příloha smazána")}: {self.new_value}'
+        labels = {
+            self.FIELD_STATUS: _('Stav'),
+            self.FIELD_TYPE: _('Typ'),
+            self.FIELD_PRIORITY: _('Priorita'),
+            self.FIELD_AREA: _('Oblast'),
+            self.FIELD_RESOLVER: _('Řešitel'),
+            self.FIELD_SALES: _('Obchodník'),
+        }
+        label = labels.get(self.field, self.field)
+        if self.old_value:
+            return f'{label}: {self.old_value} → {self.new_value}'
+        return f'{label}: {self.new_value}'
+
+
 class TicketAttachment(models.Model):
     ticket = models.ForeignKey(
         Ticket, on_delete=models.CASCADE,
