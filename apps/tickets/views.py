@@ -426,29 +426,38 @@ class TicketUpdateView(LoginRequiredMixin, UpdateView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        old_type = self.object.type
-        old_priority = self.object.priority
-        old_area_id = self.object.area_id
-        old_area_name = str(self.object.area) if self.object.area else '—'
+        # Načteme nezávislou kopii z DB jako referenci "before" — form.save(commit=False)
+        # modifikuje self.object in-place, takže nelze spolehlivě zachytit staré hodnoty
+        # ze self.object po zavolání form.save.
+        old = Ticket.objects.select_related('area').get(pk=self.object.pk)
+        old_description = old.description
+        old_title = old.title
 
         ticket = form.save(commit=False)
 
-        if old_type != ticket.type:
+        if old.type != ticket.type:
             ticket.save()
             ticket.change_type(ticket.type)
         else:
             ticket.save()
 
         user = self.request.user
-        if old_type != ticket.type:
+        if old.type != ticket.type:
             _log_change(ticket, user, TicketChange.FIELD_TYPE,
-                        _type_label(old_type), _type_label(ticket.type))
-        if old_priority != ticket.priority:
+                        _type_label(old.type), _type_label(ticket.type))
+        if old.priority != ticket.priority:
             _log_change(ticket, user, TicketChange.FIELD_PRIORITY,
-                        _priority_label(old_priority), _priority_label(ticket.priority))
-        if old_area_id != ticket.area_id:
+                        _priority_label(old.priority), _priority_label(ticket.priority))
+        if old.area_id != ticket.area_id:
             new_area_name = str(ticket.area) if ticket.area else '—'
-            _log_change(ticket, user, TicketChange.FIELD_AREA, old_area_name, new_area_name)
+            _log_change(ticket, user, TicketChange.FIELD_AREA,
+                        str(old.area) if old.area else '—', new_area_name)
+        if old_title != ticket.title:
+            _log_change(ticket, user, TicketChange.FIELD_TITLE,
+                        old_title[:200], ticket.title[:200])
+        if old_description != ticket.description:
+            _log_change(ticket, user, TicketChange.FIELD_DESCRIPTION,
+                        old_value=old_description)
 
         messages.success(self.request, _('Tiket byl uložen.'))
         return redirect('tickets:detail', pk=ticket.pk)

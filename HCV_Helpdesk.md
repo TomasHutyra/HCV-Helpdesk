@@ -268,6 +268,20 @@ Povolené typy souborů: PDF, obrázky (PNG, JPG, GIF, BMP, WEBP), dokumenty Off
 
 Soubory jsou dostupné ke stažení pouze přihlášeným uživatelům s přístupem k danému požadavku — přímý přístup přes URL je zakázán.
 
+### Historie změn
+
+Každý požadavek má auditní log všech změn. Zaznamenávají se tyto události:
+
+- Vytvoření požadavku
+- Změna stavu, typu, priority, oblasti, názvu
+- Změna řešitele nebo obchodníka
+- Úprava popisu (zaznamenává se i původní znění)
+- Přidání nebo smazání přílohy
+
+Každý záznam obsahuje: popis změny, autora změny a čas. Záznamy jsou řazeny od nejnovějšího.
+
+Historie změn je viditelná všem uživatelům s přístupem k danému požadavku, s výjimkou interních záznamů (záznamy hodin), které žadatel nevidí.
+
 ### Zápis času
 
 Čas může průběžně zapisovat řešitel, obchodník a správce (pokud je

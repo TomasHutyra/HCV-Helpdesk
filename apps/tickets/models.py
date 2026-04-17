@@ -261,6 +261,8 @@ class TicketChange(models.Model):
     FIELD_AREA = 'area'
     FIELD_RESOLVER = 'resolver'
     FIELD_SALES = 'sales'
+    FIELD_TITLE = 'title'
+    FIELD_DESCRIPTION = 'description'
     FIELD_ATTACHMENT_ADDED = 'attachment_added'
     FIELD_ATTACHMENT_DELETED = 'attachment_deleted'
     # Interní pole — skrytá před žadatelem (rezerva pro budoucí záznamy hodin)
@@ -278,14 +280,14 @@ class TicketChange(models.Model):
         related_name='ticket_changes', verbose_name=_('uživatel'),
     )
     field = models.CharField(_('pole'), max_length=30)
-    old_value = models.CharField(_('původní hodnota'), max_length=300, blank=True)
-    new_value = models.CharField(_('nová hodnota'), max_length=300, blank=True)
+    old_value = models.TextField(_('původní hodnota'), blank=True)
+    new_value = models.TextField(_('nová hodnota'), blank=True)
     created_at = models.DateTimeField(_('čas'), auto_now_add=True)
 
     class Meta:
         verbose_name = _('změna tiketu')
         verbose_name_plural = _('změny tiketu')
-        ordering = ['created_at']
+        ordering = ['-created_at']
 
     def __str__(self):
         return f'{self.ticket} — {self.field}'
@@ -298,6 +300,8 @@ class TicketChange(models.Model):
             return f'{_("Příloha přidána")}: {self.new_value}'
         if self.field == self.FIELD_ATTACHMENT_DELETED:
             return f'{_("Příloha smazána")}: {self.new_value}'
+        if self.field == self.FIELD_DESCRIPTION:
+            return f'{_("Popis upraven")}; {_("původní znění")}: {self.old_value}'
         labels = {
             self.FIELD_STATUS: _('Stav'),
             self.FIELD_TYPE: _('Typ'),
@@ -305,6 +309,8 @@ class TicketChange(models.Model):
             self.FIELD_AREA: _('Oblast'),
             self.FIELD_RESOLVER: _('Řešitel'),
             self.FIELD_SALES: _('Obchodník'),
+            self.FIELD_TITLE: _('Název'),
+            self.FIELD_DESCRIPTION: _('Popis'),
         }
         label = labels.get(self.field, self.field)
         if self.old_value:
