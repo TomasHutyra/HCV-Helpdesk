@@ -7,7 +7,7 @@ from django.utils.translation import gettext as _
 from django.views.generic import TemplateView
 
 from apps.accounts.models import User, UserRole, Company
-from apps.tickets.models import Ticket, TimeLog
+from apps.tickets.models import Ticket, TimeLog, Area
 
 
 def _month_stats_resolver(user, year, month):
@@ -48,6 +48,29 @@ def _month_stats_company(company, year, month):
         created_at__month=month,
     ).aggregate(total=Sum('hours'))['total'] or 0
 
+    # Rozpad podle oblasti
+    areas = Area.objects.order_by('name')
+    area_rows = []
+    for area in areas:
+        area_qs = tickets.filter(area=area)
+        count = area_qs.count()
+        if count == 0:
+            continue
+        area_time = TimeLog.objects.filter(
+            ticket__company=company,
+            ticket__area=area,
+            created_at__year=year,
+            created_at__month=month,
+        ).aggregate(total=Sum('hours'))['total'] or 0
+        area_rows.append({
+            'area': area,
+            'total': count,
+            'open': area_qs.filter(status__in=open_statuses).count(),
+            'resolved': area_qs.filter(status=Ticket.STATUS_RESOLVED).count(),
+            'rejected': area_qs.filter(status=Ticket.STATUS_REJECTED).count(),
+            'time_total': float(area_time),
+        })
+
     return {
         'company': company,
         'total': tickets.count(),
@@ -55,6 +78,7 @@ def _month_stats_company(company, year, month):
         'resolved': tickets.filter(status=Ticket.STATUS_RESOLVED).count(),
         'rejected': tickets.filter(status=Ticket.STATUS_REJECTED).count(),
         'time_total': float(time_total),
+        'area_rows': area_rows,
     }
 
 

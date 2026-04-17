@@ -51,34 +51,74 @@
   </div>
 
   {# Company stats #}
-  <h2 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:800;letter-spacing:-0.2px;color:var(--c-text);margin-bottom:10px;margin-top:24px">{% trans "Firmy" %}</h2>
-  <div class="stats-table-wrap">
-    <table class="stats-table">
-      <thead>
-        <tr>
-          <th>{% trans "Firma" %}</th>
-          <th class="num">{% trans "Celkem" %}</th>
-          <th class="num">{% trans "Otevřených" %}</th>
-          <th class="num">{% trans "Vyřešeno" %}</th>
-          <th class="num">{% trans "Zamítnuto" %}</th>
-          <th class="num">{% trans "Hodin" %}</th>
-        </tr>
-      </thead>
-      <tbody>
+  <div x-data="{
+    opens: Array({{ company_stats|length }}).fill(true),
+    get allOpen() { return this.opens.every(Boolean) },
+    get noneOpen() { return this.opens.every(v => !v) },
+    expandAll() { this.opens = this.opens.map(() => true) },
+    collapseAll() { this.opens = this.opens.map(() => false) }
+  }">
+    <div style="display:flex;align-items:center;gap:8px;margin-top:24px;margin-bottom:10px">
+      <h2 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:800;letter-spacing:-0.2px;color:var(--c-text);margin:0">{% trans "Firmy" %}</h2>
+      {# Rozbalit vše — disabled pokud jsou všechny rozbaleny #}
+      <button class="btn btn-ghost btn-sm" style="font-size:12px;display:flex;align-items:center;gap:4px"
+              :disabled="allOpen" :style="allOpen ? 'opacity:.4;cursor:default' : ''"
+              @click="expandAll()" title="{% trans 'Rozbalit vše' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+        {% trans "Rozbalit vše" %}
+      </button>
+      {# Sbalit vše — disabled pokud jsou všechny sbaleny #}
+      <button class="btn btn-ghost btn-sm" style="font-size:12px;display:flex;align-items:center;gap:4px"
+              :disabled="noneOpen" :style="noneOpen ? 'opacity:.4;cursor:default' : ''"
+              @click="collapseAll()" title="{% trans 'Sbalit vše' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
+        {% trans "Sbalit vše" %}
+      </button>
+    </div>
+    <div class="stats-table-wrap">
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>{% trans "Firma" %}</th>
+            <th class="num">{% trans "Celkem" %}</th>
+            <th class="num">{% trans "Otevřených" %}</th>
+            <th class="num">{% trans "Vyřešeno" %}</th>
+            <th class="num">{% trans "Zamítnuto" %}</th>
+            <th class="num">{% trans "Hodin" %}</th>
+          </tr>
+        </thead>
         {% for s in company_stats %}
-        <tr>
-          <td style="font-weight:600">{{ s.company }}</td>
-          <td class="num" style="color:var(--c-text-muted)">{{ s.total }}</td>
-          <td class="num" style="color:var(--c-amber-hover);font-weight:600">{{ s.open }}</td>
-          <td class="num" style="color:var(--c-green);font-weight:600">{{ s.resolved }}</td>
-          <td class="num" style="color:var(--c-red)">{{ s.rejected }}</td>
-          <td class="num" style="font-weight:700">{{ s.time_total }} h</td>
-        </tr>
+        <tbody>
+          <tr style="cursor:{% if s.area_rows %}pointer{% else %}default{% endif %}"
+              {% if s.area_rows %}@click="opens[{{ forloop.counter0 }}] = !opens[{{ forloop.counter0 }}]"{% endif %}>
+            <td style="font-weight:600">
+              {% if s.area_rows %}
+              <span x-text="opens[{{ forloop.counter0 }}] ? '▾' : '▸'" style="font-size:10px;margin-right:5px;color:var(--c-text-muted)"></span>
+              {% endif %}
+              {{ s.company }}
+            </td>
+            <td class="num" style="color:var(--c-text-muted)">{{ s.total }}</td>
+            <td class="num" style="color:var(--c-amber-hover);font-weight:600">{{ s.open }}</td>
+            <td class="num" style="color:var(--c-green);font-weight:600">{{ s.resolved }}</td>
+            <td class="num" style="color:var(--c-red)">{{ s.rejected }}</td>
+            <td class="num" style="font-weight:700">{{ s.time_total }} h</td>
+          </tr>
+          {% for a in s.area_rows %}
+          <tr x-show="opens[{{ forloop.parentloop.counter0 }}]" x-cloak style="background:var(--c-bg)">
+            <td style="padding-left:28px;font-size:12.5px;color:var(--c-text-muted)">{{ a.area.name }}</td>
+            <td class="num" style="font-size:12.5px;color:var(--c-text-light)">{{ a.total }}</td>
+            <td class="num" style="font-size:12.5px;color:var(--c-amber-hover)">{{ a.open }}</td>
+            <td class="num" style="font-size:12.5px;color:var(--c-green)">{{ a.resolved }}</td>
+            <td class="num" style="font-size:12.5px;color:var(--c-red)">{{ a.rejected }}</td>
+            <td class="num" style="font-size:12.5px">{% if a.time_total %}{{ a.time_total }} h{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
         {% empty %}
-        <tr><td colspan="6" style="padding:24px;text-align:center;color:var(--c-text-light)">{% trans "Žádné firmy." %}</td></tr>
+        <tbody><tr><td colspan="6" style="padding:24px;text-align:center;color:var(--c-text-light)">{% trans "Žádné firmy." %}</td></tr></tbody>
         {% endfor %}
-      </tbody>
-    </table>
+      </table>
+    </div>
   </div>
 
 {% else %}
