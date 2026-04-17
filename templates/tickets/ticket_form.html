@@ -18,7 +18,7 @@
   </h1>
 
   <div class="card card-body">
-    <form method="post" class="form-stack">
+    <form method="post" enctype="multipart/form-data" class="form-stack">
       {% csrf_token %}
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -73,6 +73,15 @@
           {% endfor %}
         </select>
         {% if form.company.errors %}<div class="form-error">{{ form.company.errors.0 }}</div>{% endif %}
+      </div>
+      {% endif %}
+
+      {% if not object %}
+      <div class="form-group">
+        <label class="form-label">{% trans "Přílohy" %} <span style="font-weight:400;color:var(--c-text-muted)">({% trans "volitelné" %})</span></label>
+        <input type="file" name="files" multiple
+               accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp,.docx,.xlsx,.xls,.pptx,.ppt,.odt,.ods,.txt,.csv,.log,.xml,.json,.zip,.7z">
+        <div style="font-size:12px;color:var(--c-text-light);margin-top:4px">{% trans "Max 5 MB na soubor · PDF, obrázky, Office, ZIP, TXT…" %}</div>
       </div>
       {% endif %}
 

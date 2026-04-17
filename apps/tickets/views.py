@@ -1,9 +1,10 @@
 import io
+import os
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as db_models
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, FileResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
@@ -14,9 +15,43 @@ from apps.accounts.models import UserRole
 from .forms import (
     TicketCreateForm, TicketUpdateForm, AssignResolverForm, AssignSalesForm,
     ResolveForm, RejectForm, ChangeTypeForm, CommentForm, TimeLogForm,
-    TicketFilterForm,
+    TicketFilterForm, AttachmentUploadForm,
 )
-from .models import Ticket, Comment, TimeLog
+from .models import Ticket, Comment, TimeLog, TicketAttachment, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
+
+
+def _validate_upload(f):
+    """Vrátí chybovou zprávu nebo None pokud je soubor v pořádku."""
+    ext = os.path.splitext(f.name)[1].lower().lstrip('.')
+    if ext not in ALLOWED_EXTENSIONS:
+        return _('Nepodporovaný typ souboru .%(ext)s.') % {'ext': ext}
+    if f.size > MAX_UPLOAD_SIZE:
+        return _('Soubor %(name)s je příliš velký (max 5 MB).') % {'name': f.name}
+    return None
+
+
+def _can_add_attachment(user, ticket):
+    """Smí uživatel přidávat přílohy k tiketu?"""
+    if user.has_role(UserRole.ADMIN):
+        return True
+    if user.has_role(UserRole.MANAGER):
+        return user.can_see_ticket_as_manager(ticket)
+    if user.has_role(UserRole.RESOLVER):
+        return ticket.resolver == user
+    if user.has_role(UserRole.SALES):
+        return ticket.sales == user
+    if user.has_role(UserRole.REQUESTER):
+        return ticket.requester == user
+    return False
+
+
+def _can_delete_attachment(user, attachment):
+    """Smí uživatel smazat přílohu? (nahrávatel nebo správce/admin)"""
+    if user.has_role(UserRole.ADMIN):
+        return True
+    if user.has_role(UserRole.MANAGER):
+        return user.can_see_ticket_as_manager(attachment.ticket)
+    return attachment.uploaded_by == user
 
 
 def _get_adjacent_tickets(user, ticket):
@@ -291,6 +326,15 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         prev_pk, next_pk = _get_adjacent_tickets(user, ticket)
         ctx['prev_ticket_pk'] = prev_pk
         ctx['next_ticket_pk'] = next_pk
+        # Přílohy
+        attachments = ticket.attachments.select_related('uploaded_by').all()
+        ctx['attachments'] = attachments
+        ctx['can_add_attachment'] = _can_add_attachment(user, ticket)
+        ctx['attachment_form'] = AttachmentUploadForm()
+        # Množina PKs příloh, které smí uživatel smazat
+        ctx['deletable_attachment_pks'] = {
+            att.pk for att in attachments if _can_delete_attachment(user, att)
+        }
         return ctx
 
 
@@ -321,6 +365,20 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
 
         ticket.save()
+
+        # Zpracování příloh (volitelné, multiple file input)
+        for f in self.request.FILES.getlist('files'):
+            err = _validate_upload(f)
+            if err:
+                messages.warning(self.request, err)
+                continue
+            TicketAttachment.objects.create(
+                ticket=ticket,
+                file=f,
+                original_name=f.name,
+                uploaded_by=self.request.user,
+            )
+
         from apps.notifications.tasks import notify_new_ticket
         notify_new_ticket.delay(ticket.pk)
         messages.success(self.request, _('Tiket byl vytvořen.'))
@@ -544,6 +602,109 @@ class AddCommentView(LoginRequiredMixin, View):
                     'can_comment': can_comment,
                 })
         return redirect('tickets:detail', pk=pk)
+
+
+class AddAttachmentView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        ticket = get_object_or_404(Ticket, pk=pk)
+        if not _can_add_attachment(request.user, ticket):
+            messages.error(request, _('Nemáte oprávnění přidávat přílohy.'))
+            return redirect('tickets:detail', pk=pk)
+
+        files = request.FILES.getlist('files')
+        if not files:
+            messages.error(request, _('Nevybrali jste žádné soubory.'))
+            return redirect('tickets:detail', pk=pk)
+
+        for f in files:
+            err = _validate_upload(f)
+            if err:
+                messages.warning(request, err)
+                continue
+            TicketAttachment.objects.create(
+                ticket=ticket,
+                file=f,
+                original_name=f.name,
+                uploaded_by=request.user,
+            )
+
+        if request.htmx:
+            attachments = ticket.attachments.select_related('uploaded_by').all()
+            return render(request, 'tickets/partials/attachment_list.html', {
+                'ticket': ticket,
+                'attachments': attachments,
+                'can_add_attachment': _can_add_attachment(request.user, ticket),
+                'attachment_form': AttachmentUploadForm(),
+                'deletable_attachment_pks': {
+                    att.pk for att in attachments if _can_delete_attachment(request.user, att)
+                },
+            })
+        return redirect('tickets:detail', pk=pk)
+
+
+class DeleteAttachmentView(LoginRequiredMixin, View):
+    def post(self, request, pk, att_pk):
+        ticket = get_object_or_404(Ticket, pk=pk)
+        attachment = get_object_or_404(TicketAttachment, pk=att_pk, ticket=ticket)
+        if not _can_delete_attachment(request.user, attachment):
+            messages.error(request, _('Nemáte oprávnění smazat tuto přílohu.'))
+            return redirect('tickets:detail', pk=pk)
+
+        # Smazat fyzický soubor
+        try:
+            if attachment.file and os.path.isfile(attachment.file.path):
+                os.remove(attachment.file.path)
+        except (ValueError, OSError):
+            pass
+        attachment.delete()
+
+        if request.htmx:
+            attachments = ticket.attachments.select_related('uploaded_by').all()
+            return render(request, 'tickets/partials/attachment_list.html', {
+                'ticket': ticket,
+                'attachments': attachments,
+                'can_add_attachment': _can_add_attachment(request.user, ticket),
+                'attachment_form': AttachmentUploadForm(),
+                'deletable_attachment_pks': {
+                    att.pk for att in attachments if _can_delete_attachment(request.user, att)
+                },
+            })
+        return redirect('tickets:detail', pk=pk)
+
+
+class DownloadAttachmentView(LoginRequiredMixin, View):
+    def get(self, request, pk, att_pk):
+        ticket = get_object_or_404(Ticket, pk=pk)
+        attachment = get_object_or_404(TicketAttachment, pk=att_pk, ticket=ticket)
+
+        # Kontrola přístupu — stejná logika jako detail tiketu
+        user = request.user
+        allowed = False
+        if user.has_role(UserRole.ADMIN):
+            allowed = True
+        elif user.has_role(UserRole.MANAGER):
+            allowed = user.can_see_ticket_as_manager(ticket)
+        elif user.has_role(UserRole.RESOLVER):
+            allowed = ticket.resolver == user or ticket.status == Ticket.STATUS_NEW
+        elif user.has_role(UserRole.SALES):
+            allowed = ticket.sales == user
+        elif user.has_role(UserRole.REQUESTER):
+            allowed = ticket.requester == user
+
+        if not allowed:
+            messages.error(request, _('Nemáte přístup k této příloze.'))
+            return redirect('tickets:list')
+
+        try:
+            response = FileResponse(
+                open(attachment.file.path, 'rb'),
+                as_attachment=True,
+                filename=attachment.original_name,
+            )
+            return response
+        except (FileNotFoundError, OSError):
+            messages.error(request, _('Soubor nebyl nalezen.'))
+            return redirect('tickets:detail', pk=pk)
 
 
 class AddTimeLogView(LoginRequiredMixin, View):

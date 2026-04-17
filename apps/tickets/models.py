@@ -1,7 +1,23 @@
+import os
+import uuid
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django_fsm import FSMField, transition
+
+ALLOWED_EXTENSIONS = {
+    'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp',
+    'docx', 'xlsx', 'xls', 'pptx', 'ppt', 'odt', 'ods',
+    'txt', 'csv', 'log', 'xml', 'json',
+    'zip', '7z',
+}
+MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+def attachment_upload_path(instance, filename):
+    ext = os.path.splitext(filename)[1].lower()
+    return f'tickets/attachments/{uuid.uuid4().hex}{ext}'
 
 
 class Area(models.Model):
@@ -233,3 +249,45 @@ class TimeLog(models.Model):
 
     def __str__(self):
         return f'{self.hours}h — {self.ticket}'
+
+
+class TicketAttachment(models.Model):
+    ticket = models.ForeignKey(
+        Ticket, on_delete=models.CASCADE,
+        related_name='attachments', verbose_name=_('tiket'),
+    )
+    file = models.FileField(_('soubor'), upload_to=attachment_upload_path)
+    original_name = models.CharField(_('název souboru'), max_length=255)
+    uploaded_by = models.ForeignKey(
+        'accounts.User', on_delete=models.PROTECT,
+        related_name='attachments', verbose_name=_('nahrál'),
+    )
+    created_at = models.DateTimeField(_('nahráno'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('příloha')
+        verbose_name_plural = _('přílohy')
+        ordering = ['created_at']
+
+    def __str__(self):
+        return self.original_name
+
+    @property
+    def extension(self):
+        return os.path.splitext(self.original_name)[1].lower().lstrip('.')
+
+    @property
+    def is_image(self):
+        return self.extension in {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
+
+    @property
+    def size_display(self):
+        try:
+            size = self.file.size
+        except (FileNotFoundError, OSError):
+            return ''
+        if size < 1024:
+            return f'{size} B'
+        if size < 1024 * 1024:
+            return f'{size / 1024:.0f} KB'
+        return f'{size / 1024 / 1024:.1f} MB'

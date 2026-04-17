@@ -46,6 +46,9 @@
       <p class="ticket-description">{{ ticket.description }}</p>
     </div>
 
+    {# Přílohy #}
+    {% include 'tickets/partials/attachment_list.html' %}
+
     {# Comments #}
     <div id="comments-section">
       {% include 'tickets/partials/comment_list.html' %}

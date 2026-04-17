@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Ticket, Comment, TimeLog, Area
+from .models import Ticket, Comment, TimeLog, Area, TicketAttachment
 
 
 @admin.register(Area)
@@ -20,13 +20,19 @@ class TimeLogInline(admin.TabularInline):
     readonly_fields = ('user', 'created_at')
 
 
+class AttachmentInline(admin.TabularInline):
+    model = TicketAttachment
+    extra = 0
+    readonly_fields = ('original_name', 'uploaded_by', 'created_at')
+
+
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
     list_display = ('pk', 'title', 'type', 'status', 'priority', 'company', 'requester', 'resolver', 'created_at')
     list_filter = ('status', 'type', 'priority', 'area', 'company')
     search_fields = ('title', 'description')
     readonly_fields = ('status', 'created_at', 'updated_at', 'resolved_at')
-    inlines = [CommentInline, TimeLogInline]
+    inlines = [CommentInline, TimeLogInline, AttachmentInline]
 
 
 @admin.register(Comment)

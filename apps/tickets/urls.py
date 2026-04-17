@@ -19,4 +19,7 @@ urlpatterns = [
     path('<int:pk>/take/', views.TakeTicketView.as_view(), name='take'),
     path('<int:pk>/comment/', views.AddCommentView.as_view(), name='add_comment'),
     path('<int:pk>/timelog/', views.AddTimeLogView.as_view(), name='add_timelog'),
+    path('<int:pk>/attachments/upload/', views.AddAttachmentView.as_view(), name='add_attachment'),
+    path('<int:pk>/attachments/<int:att_pk>/delete/', views.DeleteAttachmentView.as_view(), name='delete_attachment'),
+    path('<int:pk>/attachments/<int:att_pk>/download/', views.DownloadAttachmentView.as_view(), name='download_attachment'),
 ]

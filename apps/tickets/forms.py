@@ -1,6 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import Ticket, Comment, TimeLog, Area
+from .models import Ticket, Comment, TimeLog, Area, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
 
 
 class TicketCreateForm(forms.ModelForm):
@@ -116,6 +116,38 @@ class TimeLogForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['hours'].label = _('Hodiny')
         self.fields['note'].label = _('Poznámka')
+
+
+class MultipleFileInput(forms.FileInput):
+    """FileInput s podporou výběru více souborů najednou."""
+    allow_multiple_selected = True
+
+
+class AttachmentUploadForm(forms.Form):
+    """Formulář pro nahrání jedné nebo více příloh na detail tiketu."""
+    files = forms.FileField(
+        label=_('Soubory'),
+        widget=MultipleFileInput(attrs={'multiple': True}),
+    )
+
+    def clean_files(self):
+        # Django při multiple file inputu vrací jen první soubor přes cleaned_data;
+        # plný seznam zpracováváme v view přes request.FILES.getlist('files').
+        # Zde validujeme alespoň ten první.
+        f = self.cleaned_data.get('files')
+        if f:
+            self._validate_single_file(f)
+        return f
+
+    def _validate_single_file(self, f):
+        import os
+        ext = os.path.splitext(f.name)[1].lower().lstrip('.')
+        if ext not in ALLOWED_EXTENSIONS:
+            raise forms.ValidationError(
+                _('Nepodporovaný typ souboru .%(ext)s.') % {'ext': ext}
+            )
+        if f.size > MAX_UPLOAD_SIZE:
+            raise forms.ValidationError(_('Soubor je příliš velký (max 5 MB).'))
 
 
 class TicketFilterForm(forms.Form):

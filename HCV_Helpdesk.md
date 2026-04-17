@@ -136,9 +136,11 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | Vytvořit tiket | ✓ | — | — | ✓ | — |
 | Editovat tiket (název, popis, typ, oblast, priorita) | — | přiřazený ² | — | ✓ ¹ ² | — |
 | Změnit typ tiketu | — | přiřazený ² | — | ✓ ¹ ² | — |
-| **Tikety — komentáře a čas** | | | | | |
+| **Tikety — komentáře, čas a přílohy** | | | | | |
 | Komentovat tiket | jen vlastní | přiřazený | přiřazený | ✓ ¹ | — |
 | Zapsat čas | — | přiřazený | přiřazený | jen pokud přiřazen ³ | — |
+| Přidat přílohu | jen vlastní | přiřazený | přiřazený | ✓ ¹ | — |
+| Smazat přílohu | vlastní přílohy | vlastní přílohy | vlastní přílohy | ✓ ¹ | ✓ |
 | **Tikety — akce** | | | | | |
 | Převzít tiket (přiřadit se sám sobě) | — | Nový ⁴ | — | — | — |
 | Přiřadit řešitele | — | — | — | ✓ ¹ | — |
@@ -257,6 +259,14 @@ obchodníka bez změny stavu.
 
 Ve stavech „Vyřešeno" a „Zamítnuto" není možné dělat změny, pouze přesun
 do stavu „Řeší se" nebo „Příprava nabídky".
+
+### Přílohy
+
+K požadavku lze přikládat soubory. Přílohy může přidávat žadatel (ke svému požadavku), přiřazený řešitel, přiřazený obchodník, správce (v rámci svého omezení) a administrátor. Přílohu může smazat ten, kdo ji nahrál, nebo správce/administrátor.
+
+Povolené typy souborů: PDF, obrázky (PNG, JPG, GIF, BMP, WEBP), dokumenty Office (DOCX, XLSX, XLS, PPTX, PPT, ODT, ODS), textové soubory (TXT, CSV, LOG, XML, JSON) a archivy (ZIP, 7Z). Maximální velikost jednoho souboru je 5 MB.
+
+Soubory jsou dostupné ke stažení pouze přihlášeným uživatelům s přístupem k danému požadavku — přímý přístup přes URL je zakázán.
 
 ### Zápis času
 
