@@ -6,9 +6,11 @@ Lokálně (CELERY_TASK_ALWAYS_EAGER=True) lze volat přímo pro testování.
 """
 import email
 import logging
+import os
 from email.header import decode_header, make_header
 
 from django.conf import settings
+from django.core.files.base import ContentFile
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +46,86 @@ def _find_user_by_email(from_email):
         return None
 
 
-def _create_ticket_from_email(subject, body, requester):
+def _is_duplicate(message_id):
+    """Vrátí True, pokud jsme tento Message-ID již zpracovali (TTL 30 dní)."""
+    if not message_id:
+        return False
+    from django.core.cache import cache
+    key = f'imap_msgid:{message_id}'
+    if cache.get(key):
+        return True
+    cache.set(key, 1, timeout=60 * 60 * 24 * 30)
+    return False
+
+
+def _is_rate_limited(from_email):
+    """Vrátí True, pokud odesílatel překročil limit tiketů za hodinu."""
+    from django.conf import settings
+    from django.core.cache import cache
+    limit = getattr(settings, 'IMAP_RATE_LIMIT', 10)
+    key = f'imap_rl:{from_email.lower()}'
+    count = cache.get(key, 0)
+    if count >= limit:
+        return True
+    cache.set(key, count + 1, timeout=3600)
+    return False
+
+
+def _get_attachments(msg):
+    """Vrátí seznam (filename, content_bytes) pro přílohy e-mailu.
+
+    Přeskočí části bez Content-Disposition attachment nebo inline bez názvu,
+    a části text/plain a text/html (to je tělo zprávy).
+    """
+    attachments = []
+    if not msg.is_multipart():
+        return attachments
+    for part in msg.walk():
+        content_disposition = part.get('Content-Disposition', '')
+        content_type = part.get_content_type()
+        # Přeskočit textové části těla zprávy
+        if content_type in ('text/plain', 'text/html') and 'attachment' not in content_disposition:
+            continue
+        # Zpracovat pouze části s názvem souboru
+        filename = part.get_filename()
+        if not filename:
+            continue
+        filename = str(make_header(decode_header(filename)))
+        payload = part.get_payload(decode=True)
+        if payload is None:
+            continue
+        attachments.append((filename, payload))
+    return attachments
+
+
+def _save_attachments(ticket, requester, attachments):
+    """Uloží přílohy e-mailu jako TicketAttachment záznamy.
+
+    Přeskočí soubory s nepovolenou příponou nebo příliš velké (stejná pravidla
+    jako při ručním uploadu).
+    """
+    from apps.tickets.models import TicketAttachment, TicketChange, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
+    for filename, content in attachments:
+        ext = os.path.splitext(filename)[1].lower().lstrip('.')
+        if ext not in ALLOWED_EXTENSIONS:
+            logger.warning('Příloha "%s" má nepovolenou příponu, přeskočena.', filename)
+            continue
+        if len(content) > MAX_UPLOAD_SIZE:
+            logger.warning('Příloha "%s" překračuje 5 MB limit, přeskočena.', filename)
+            continue
+        att = TicketAttachment(ticket=ticket, original_name=filename, uploaded_by=requester)
+        att.file.save(filename, ContentFile(content), save=True)
+        TicketChange.objects.create(
+            ticket=ticket,
+            user=requester,
+            field=TicketChange.FIELD_ATTACHMENT_ADDED,
+            old_value='',
+            new_value=filename,
+        )
+        logger.info('Uložena příloha "%s" k tiketu #%s.', filename, ticket.pk)
+
+
+def _create_ticket_from_email(subject, body, requester, attachments):
     from apps.tickets.models import Ticket, Area
     ticket = Ticket.objects.create(
         type=Ticket.TYPE_PROBLEM,
@@ -56,6 +137,8 @@ def _create_ticket_from_email(subject, body, requester):
         requester=requester,
     )
     logger.info('Vytvořen tiket #%s z e-mailu od %s', ticket.pk, requester.email)
+    if attachments:
+        _save_attachments(ticket, requester, attachments)
     # Odeslat notifikaci
     from apps.notifications.tasks import notify_new_ticket
     notify_new_ticket.delay(ticket.pk)
@@ -96,7 +179,13 @@ def process_inbox():
             from email.utils import parseaddr
             _, from_email = parseaddr(from_field)
             subject = _decode_header(msg.get('Subject', ''))
-            body = _get_body(msg)
+            message_id = msg.get('Message-ID', '').strip()
+
+            # Deduplikace — přeskočit e-mail, který už byl zpracován
+            if _is_duplicate(message_id):
+                logger.info('Přeskočen duplicitní e-mail Message-ID=%s', message_id)
+                server.add_flags(uid, [imapclient.SEEN])
+                continue
 
             requester = _find_user_by_email(from_email)
             if requester is None:
@@ -105,7 +194,15 @@ def process_inbox():
                 server.add_flags(uid, [imapclient.SEEN])
                 continue
 
-            _create_ticket_from_email(subject, body, requester)
+            # Rate limiting — přeskočit, pokud odesílatel překročil hodinový limit
+            if _is_rate_limited(from_email):
+                logger.warning('Rate limit překročen pro %s — tiket nevytvořen.', from_email)
+                server.add_flags(uid, [imapclient.SEEN])
+                continue
+
+            body = _get_body(msg)
+            attachments = _get_attachments(msg)
+            _create_ticket_from_email(subject, body, requester, attachments)
             server.add_flags(uid, [imapclient.SEEN])
 
         server.logout()

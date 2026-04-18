@@ -5,6 +5,14 @@ env = environ.Env()
 
 DEBUG = False
 
+# Cache — Redis (stejný server jako Celery broker)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': env('CELERY_BROKER_URL', default='redis://redis:6379/0'),
+    }
+}
+
 DATABASES = {
     'default': env.db('DATABASE_URL')
 }

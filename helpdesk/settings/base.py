@@ -125,6 +125,16 @@ IMAP_PASSWORD = env('IMAP_PASSWORD', default='')
 IMAP_USE_SSL = env('IMAP_USE_SSL')
 IMAP_FOLDER = env('IMAP_FOLDER', default='INBOX')
 
+# Cache — výchozí locmem (production přepíše na Redis)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
+# IMAP — max počet tiketů z e-mailu na odesílatele za hodinu
+IMAP_RATE_LIMIT = 10
+
 # Celery
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
