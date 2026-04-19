@@ -50,14 +50,20 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
   - Řešitel požadavku
 
-  - Vidí všechny požadavky, které mu byly přiřazeny, a navíc všechny
-    požadavky ve stavu „Nový"
+  - Může mít nastaven seznam oblastí, kterým se věnuje.
+    Pokud nemá nastaveno nic, vidí všechny nové tikety.
+    Pokud má nastaveny oblasti, vidí nové tikety pouze z těchto oblastí
+    a tikety s neznámou oblastí nebo bez oblasti.
+    Přiřazené tikety vidí vždy bez ohledu na oblast.
+
+  - Vidí přiřazené požadavky a navíc nové požadavky v rámci svých oblastí
 
   - Může komentovat přiřazené požadavky (požadavky ve stavu „Nový",
     které mu dosud nebyly přiřazeny, komentovat nemůže)
 
   - Může převzít požadavek ve stavu „Nový" — přiřadí se sám sobě
-    a požadavek přejde do stavu „Řeší se"
+    a požadavek přejde do stavu „Řeší se"; převzít lze pouze tiket
+    z oblasti, kterou řešitel spravuje (nebo neznámé oblasti)
 
   - Může změnit typ požadavku, prioritu, oblast a stav požadavku
 
@@ -126,6 +132,9 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
     na stránce „Upravit uživatele" (pole se zobrazí pouze pokud má
     uživatel přiřazenu roli Správce)
 
+  - Nastavuje oblasti řešitelům přímo na stránce „Upravit uživatele"
+    (pole se zobrazí pouze pokud má uživatel přiřazenu roli Řešitel)
+
 ### Tabulka práv
 
 | Funkce | Žadatel | Řešitel | Obchodník | Správce | Administrátor |
@@ -158,6 +167,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | Spravovat firmy | — | — | — | — | ✓ |
 | Spravovat oblasti | — | — | — | — | ✓ |
 | Nastavit omezení správcům (oblasti, firmy) | — | — | — | — | ✓ |
+| Nastavit oblasti řešitelům | — | — | — | — | ✓ |
 
 ¹ V rámci nastaveného omezení oblasti a firem správce (pokud není omezení nastaveno, platí pro všechny tikety).
 
@@ -165,7 +175,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
 ³ Správce smí zapisovat čas průběžně pouze tehdy, je-li k danému tiketu zároveň přiřazen jako řešitel nebo obchodník.
 
-⁴ Řešitel vidí (a může převzít) všechny tikety ve stavu „Nový", ale komentovat je může až po přiřazení.
+⁴ Řešitel vidí (a může převzít) nové tikety v rámci svých oblastí (nebo všechny, pokud nemá omezení), ale komentovat je může až po přiřazení. Přiřazené tikety vidí vždy bez ohledu na oblast.
 
 ## Požadavky
 

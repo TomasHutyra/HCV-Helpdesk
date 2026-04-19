@@ -40,9 +40,17 @@ class AssignResolverForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         from apps.accounts.models import User, UserRole
         super().__init__(*args, **kwargs)
-        self.fields['resolver'].queryset = User.objects.filter(
-            user_roles__role=UserRole.RESOLVER
-        ).distinct()
+        ticket = self.instance
+        resolvers = User.objects.filter(user_roles__role=UserRole.RESOLVER).distinct()
+        # Zahrnout pouze řešitele, kteří nemají omezení oblastí,
+        # nebo mají oblast tiketu ve svých oblastech (neznámá oblast = bez omezení).
+        if ticket and ticket.pk and ticket.area and not ticket.area.is_unknown:
+            # Řešitelé BEZ omezení = ti, kteří nemají žádný záznam v resolver_areas
+            unrestricted = resolvers.exclude(resolver_areas__isnull=False).distinct()
+            # Řešitelé s oblastí tiketu
+            with_area = resolvers.filter(resolver_areas=ticket.area).distinct()
+            resolvers = (unrestricted | with_area).distinct()
+        self.fields['resolver'].queryset = resolvers
         self.fields['resolver'].label = _('Řešitel')
         self.fields['resolver'].required = True
 

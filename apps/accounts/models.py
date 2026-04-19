@@ -48,6 +48,15 @@ class User(AbstractUser):
         help_text=_('Správce vidí pouze tikety těchto firem. Ponechte prázdné pro přístup ke všem firmám.'),
     )
 
+    # ---- Omezení řešitele ----
+    resolver_areas = models.ManyToManyField(
+        'tickets.Area',
+        blank=True,
+        related_name='resolving_resolvers',
+        verbose_name=_('oblasti řešitele'),
+        help_text=_('Řešitel vidí nové tikety pouze z těchto oblastí. Ponechte prázdné pro přístup ke všem novým tiketům.'),
+    )
+
     class Meta:
         verbose_name = _('uživatel')
         verbose_name_plural = _('uživatelé')
@@ -136,6 +145,33 @@ class User(AbstractUser):
             if ticket.company_id and ticket.company_id not in co_pks:
                 return False
         return True
+
+    # ------------------------------------------------------------------ #
+    # Omezení řešitele — viditelnost nových tiketů a přiřazení            #
+    # ------------------------------------------------------------------ #
+
+    def get_resolver_new_tickets_q(self):
+        """
+        Vrátí Q výraz omezující nové tikety viditelné tomuto řešiteli dle oblasti.
+        Vrátí None, pokud řešitel nemá žádné omezení (vidí všechny nové tikety).
+        """
+        from django.db.models import Q
+        area_pks = list(self.resolver_areas.filter(is_unknown=False).values_list('pk', flat=True))
+        if not area_pks:
+            return None
+        return Q(area_id__in=area_pks) | Q(area__is_unknown=True) | Q(area__isnull=True)
+
+    def can_handle_ticket_area(self, ticket):
+        """
+        Vrátí True, pokud řešitel může zpracovat tiket dle oblasti
+        (tj. oblast tiketu je v jeho oblastech, neznámá nebo prázdná).
+        """
+        area_pks = set(self.resolver_areas.filter(is_unknown=False).values_list('pk', flat=True))
+        if not area_pks:
+            return True  # bez omezení
+        if ticket.area is None or ticket.area.is_unknown:
+            return True
+        return ticket.area_id in area_pks
 
 
 class UserRole(models.Model):

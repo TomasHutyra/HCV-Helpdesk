@@ -19,13 +19,15 @@
 <div style="max-width:520px">
   <div class="card card-body">
     <form method="post" class="form-stack"
-          x-data="{ isManager: false }"
-          x-init="isManager = $el.querySelector('input[name=\'roles\'][value=\'manager\']')?.checked || false"
-          @change="isManager = $el.querySelector('input[name=\'roles\'][value=\'manager\']')?.checked || false">
+          x-data="{ isManager: false, isResolver: false }"
+          x-init="isManager = $el.querySelector('input[name=\'roles\'][value=\'manager\']')?.checked || false; isResolver = $el.querySelector('input[name=\'roles\'][value=\'resolver\']')?.checked || false"
+          @change="isManager = $el.querySelector('input[name=\'roles\'][value=\'manager\']')?.checked || false; isResolver = $el.querySelector('input[name=\'roles\'][value=\'resolver\']')?.checked || false">
       {% csrf_token %}
       {% for field in form %}
       {% if field.html_name == 'managed_areas' or field.html_name == 'managed_companies' %}
       <div class="form-group" x-show="isManager" x-cloak>
+      {% elif field.html_name == 'resolver_areas' %}
+      <div class="form-group" x-show="isResolver" x-cloak>
       {% else %}
       <div class="form-group">
       {% endif %}
@@ -41,7 +43,7 @@
         {% else %}
           {{ field }}
         {% endif %}
-        {% if field.help_text and field.html_name in 'managed_areas managed_companies' %}
+        {% if field.help_text and field.html_name in 'managed_areas managed_companies resolver_areas' %}
           <div style="font-size:12px;color:var(--c-text-muted);margin-top:4px">{{ field.help_text }}</div>
         {% endif %}
         {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}

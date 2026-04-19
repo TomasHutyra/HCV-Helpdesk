@@ -37,6 +37,13 @@ class UserCreateForm(UserCreationForm):
         required=False,
         help_text=_('Prázdné = přístup ke všem firmám.'),
     )
+    resolver_areas = forms.ModelMultipleChoiceField(
+        queryset=Area.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        label=_('Oblasti řešitele'),
+        required=False,
+        help_text=_('Prázdné = vidí všechny nové tikety.'),
+    )
 
     class Meta:
         model = User
@@ -50,6 +57,7 @@ class UserCreateForm(UserCreationForm):
                 UserRole.objects.create(user=user, role=role)
             user.managed_areas.set(self.cleaned_data.get('managed_areas', []))
             user.managed_companies.set(self.cleaned_data.get('managed_companies', []))
+            user.resolver_areas.set(self.cleaned_data.get('resolver_areas', []))
         return user
 
 
@@ -74,6 +82,13 @@ class UserUpdateForm(forms.ModelForm):
         required=False,
         help_text=_('Prázdné = přístup ke všem firmám.'),
     )
+    resolver_areas = forms.ModelMultipleChoiceField(
+        queryset=Area.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        label=_('Oblasti řešitele'),
+        required=False,
+        help_text=_('Prázdné = vidí všechny nové tikety.'),
+    )
 
     class Meta:
         model = User
@@ -91,6 +106,9 @@ class UserUpdateForm(forms.ModelForm):
             self.initial['managed_companies'] = list(
                 self.instance.managed_companies.values_list('pk', flat=True)
             )
+            self.initial['resolver_areas'] = list(
+                self.instance.resolver_areas.values_list('pk', flat=True)
+            )
 
     def save(self, commit=True):
         user = super().save(commit=commit)
@@ -100,6 +118,7 @@ class UserUpdateForm(forms.ModelForm):
                 UserRole.objects.create(user=user, role=role)
             user.managed_areas.set(self.cleaned_data.get('managed_areas', []))
             user.managed_companies.set(self.cleaned_data.get('managed_companies', []))
+            user.resolver_areas.set(self.cleaned_data.get('resolver_areas', []))
         return user
 
 

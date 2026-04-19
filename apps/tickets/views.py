@@ -83,7 +83,9 @@ def _get_adjacent_tickets(user, ticket):
         if q is not None:
             qs = qs.filter(q)
     elif user.has_role(UserRole.RESOLVER):
-        qs = qs.filter(db_models.Q(resolver=user) | db_models.Q(status=Ticket.STATUS_NEW))
+        area_q = user.get_resolver_new_tickets_q()
+        new_q = db_models.Q(status=Ticket.STATUS_NEW) if area_q is None else db_models.Q(status=Ticket.STATUS_NEW) & area_q
+        qs = qs.filter(db_models.Q(resolver=user) | new_q)
     elif user.has_role(UserRole.SALES):
         qs = qs.filter(sales=user)
     elif user.has_role(UserRole.REQUESTER):
@@ -164,7 +166,9 @@ class TicketListView(LoginRequiredMixin, ListView):
             if q is not None:
                 qs = qs.filter(q)
         elif user.has_role(UserRole.RESOLVER):
-            qs = qs.filter(db_models.Q(resolver=user) | db_models.Q(status=Ticket.STATUS_NEW))
+            area_q = user.get_resolver_new_tickets_q()
+            new_q = db_models.Q(status=Ticket.STATUS_NEW) if area_q is None else db_models.Q(status=Ticket.STATUS_NEW) & area_q
+            qs = qs.filter(db_models.Q(resolver=user) | new_q)
         elif user.has_role(UserRole.SALES):
             qs = qs.filter(sales=user)
         elif user.has_role(UserRole.REQUESTER):
@@ -204,7 +208,9 @@ class TicketExportView(LoginRequiredMixin, View):
             if q is not None:
                 qs = qs.filter(q)
         elif user.has_role(UserRole.RESOLVER):
-            qs = qs.filter(db_models.Q(resolver=user) | db_models.Q(status=Ticket.STATUS_NEW))
+            area_q = user.get_resolver_new_tickets_q()
+            new_q = db_models.Q(status=Ticket.STATUS_NEW) if area_q is None else db_models.Q(status=Ticket.STATUS_NEW) & area_q
+            qs = qs.filter(db_models.Q(resolver=user) | new_q)
         elif user.has_role(UserRole.SALES):
             qs = qs.filter(sales=user)
         elif user.has_role(UserRole.REQUESTER):
@@ -296,7 +302,7 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
                 return ticket
             messages.error(self.request, _('Nemáte přístup k tomuto tiketu.'))
             raise PermissionError()
-        if user.has_role(UserRole.RESOLVER) and (ticket.resolver == user or ticket.status == Ticket.STATUS_NEW):
+        if user.has_role(UserRole.RESOLVER) and (ticket.resolver == user or (ticket.status == Ticket.STATUS_NEW and user.can_handle_ticket_area(ticket))):
             return ticket
         if user.has_role(UserRole.SALES) and ticket.sales == user:
             return ticket
@@ -537,6 +543,9 @@ class TakeTicketView(LoginRequiredMixin, View):
         if ticket.status != Ticket.STATUS_NEW:
             messages.error(request, _('Tiket již nelze převzít.'))
             return redirect('tickets:detail', pk=pk)
+        if not request.user.can_handle_ticket_area(ticket):
+            messages.error(request, _('Nemáte oprávnění převzít tiket z této oblasti.'))
+            return redirect('tickets:detail', pk=pk)
         old_status = ticket.status
         ticket.resolver = request.user
         ticket.to_in_progress()
@@ -775,7 +784,7 @@ class DownloadAttachmentView(LoginRequiredMixin, View):
         elif user.has_role(UserRole.MANAGER):
             allowed = user.can_see_ticket_as_manager(ticket)
         elif user.has_role(UserRole.RESOLVER):
-            allowed = ticket.resolver == user or ticket.status == Ticket.STATUS_NEW
+            allowed = ticket.resolver == user or (ticket.status == Ticket.STATUS_NEW and user.can_handle_ticket_area(ticket))
         elif user.has_role(UserRole.SALES):
             allowed = ticket.sales == user
         elif user.has_role(UserRole.REQUESTER):
