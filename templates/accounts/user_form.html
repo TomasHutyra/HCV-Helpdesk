@@ -18,10 +18,17 @@
 
 <div style="max-width:520px">
   <div class="card card-body">
-    <form method="post" class="form-stack">
+    <form method="post" class="form-stack"
+          x-data="{ isManager: false }"
+          x-init="isManager = $el.querySelector('input[name=\'roles\'][value=\'manager\']')?.checked || false"
+          @change="isManager = $el.querySelector('input[name=\'roles\'][value=\'manager\']')?.checked || false">
       {% csrf_token %}
       {% for field in form %}
+      {% if field.html_name == 'managed_areas' or field.html_name == 'managed_companies' %}
+      <div class="form-group" x-show="isManager" x-cloak>
+      {% else %}
       <div class="form-group">
+      {% endif %}
         <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
         {% if field.field.widget.input_type == 'checkbox' and field.field.widget|stringformat:'s' == '<CheckboxSelectMultiple>' %}
           <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:2px">
@@ -33,6 +40,9 @@
           </div>
         {% else %}
           {{ field }}
+        {% endif %}
+        {% if field.help_text and field.html_name in 'managed_areas managed_companies' %}
+          <div style="font-size:12px;color:var(--c-text-muted);margin-top:4px">{{ field.help_text }}</div>
         {% endif %}
         {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
       </div>

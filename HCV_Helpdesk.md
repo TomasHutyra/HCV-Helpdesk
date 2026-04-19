@@ -122,7 +122,9 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
   - Zakládá a spravuje oblasti (název, příznak „neznámá")
 
-  - Nastavuje omezení správcům — seznam oblastí a/nebo firem
+  - Nastavuje omezení správcům — seznam oblastí a/nebo firem přímo
+    na stránce „Upravit uživatele" (pole se zobrazí pouze pokud má
+    uživatel přiřazenu roli Správce)
 
 ### Tabulka práv
 
@@ -186,11 +188,26 @@ adresu. V takovém případě se požadavek založí následovně:
 
 - Název = Předmět e-mailu
 
-- Popis = Tělo e-mailu
+- Popis = Tělo e-mailu (plain text)
 
 - Oblast = oblast označená jako neznámá (pokud existuje)
 
 - Priorita = Střední
+
+- Přílohy = soubory přiložené k e-mailu jsou uloženy jako přílohy tiketu
+  (stejná pravidla jako při ručním nahrání: povolené typy, max 5 MB;
+  soubory s nepovolenou příponou nebo překračující limit jsou přeskočeny)
+
+E-mail zpracuje pouze systém, pokud odesílatel odpovídá aktivnímu
+uživateli s rolí Žadatel. Neznámí odesílatelé jsou ignorováni.
+
+Ochrana proti zneužití:
+
+- Deduplikace — každý e-mail je identifikován hlavičkou Message-ID;
+  e-mail se stejným Message-ID je zpracován pouze jednou (TTL 30 dní).
+
+- Rate limiting — jeden žadatel může prostřednictvím e-mailu vytvořit
+  nejvýše 10 tiketů za hodinu; další e-maily jsou v daném okně ignorovány.
 
 Požadavky mohu být typu
 

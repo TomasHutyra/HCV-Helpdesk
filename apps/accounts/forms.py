@@ -28,7 +28,14 @@ class UserCreateForm(UserCreationForm):
         widget=forms.CheckboxSelectMultiple,
         label=_('Spravované oblasti'),
         required=False,
-        help_text=_('Pouze pro roli Správce. Prázdné = přístup ke všem oblastem.'),
+        help_text=_('Prázdné = přístup ke všem oblastem.'),
+    )
+    managed_companies = forms.ModelMultipleChoiceField(
+        queryset=Company.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        label=_('Spravované firmy'),
+        required=False,
+        help_text=_('Prázdné = přístup ke všem firmám.'),
     )
 
     class Meta:
@@ -42,6 +49,7 @@ class UserCreateForm(UserCreationForm):
             for role in self.cleaned_data.get('roles', []):
                 UserRole.objects.create(user=user, role=role)
             user.managed_areas.set(self.cleaned_data.get('managed_areas', []))
+            user.managed_companies.set(self.cleaned_data.get('managed_companies', []))
         return user
 
 
@@ -57,7 +65,14 @@ class UserUpdateForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple,
         label=_('Spravované oblasti'),
         required=False,
-        help_text=_('Pouze pro roli Správce. Prázdné = přístup ke všem oblastem.'),
+        help_text=_('Prázdné = přístup ke všem oblastem.'),
+    )
+    managed_companies = forms.ModelMultipleChoiceField(
+        queryset=Company.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        label=_('Spravované firmy'),
+        required=False,
+        help_text=_('Prázdné = přístup ke všem firmám.'),
     )
 
     class Meta:
@@ -73,6 +88,9 @@ class UserUpdateForm(forms.ModelForm):
             self.initial['managed_areas'] = list(
                 self.instance.managed_areas.values_list('pk', flat=True)
             )
+            self.initial['managed_companies'] = list(
+                self.instance.managed_companies.values_list('pk', flat=True)
+            )
 
     def save(self, commit=True):
         user = super().save(commit=commit)
@@ -81,6 +99,7 @@ class UserUpdateForm(forms.ModelForm):
             for role in self.cleaned_data.get('roles', []):
                 UserRole.objects.create(user=user, role=role)
             user.managed_areas.set(self.cleaned_data.get('managed_areas', []))
+            user.managed_companies.set(self.cleaned_data.get('managed_companies', []))
         return user
 
 
