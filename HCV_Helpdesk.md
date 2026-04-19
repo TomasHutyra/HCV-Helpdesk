@@ -354,11 +354,27 @@ sloupec Hodiny (součet všech zaznamenaných hodin k danému požadavku).
 ### Filtry
 
 Všichni uživatelé mohou filtrovat podle: Stav, Typ, Oblast, Priorita,
-Vytvořeno od, Vytvořeno do (výběr konkrétního data nebo rozsahu),
 a textového vyhledávání v názvu a popisu.
+
+Filtr data vytvoření funguje jako rozsah: pole „Vytvořeno od" omezuje
+výsledky na tikety vytvořené v daný den nebo později, pole „Vytvořeno do"
+na tikety vytvořené v daný den nebo dříve. Obě pole jsou volitelná
+a nezávislá — lze zadat jen jedno z nich (filtr od, filtr do) nebo obě
+najednou pro přesný rozsah.
 
 Správce a administrátor mohou navíc filtrovat podle: Firma, Žadatel,
 Řešitel.
+
+### Export do Excelu
+
+Z přehledu požadavků lze exportovat aktuálně zobrazené tikety (včetně
+aplikovaných filtrů) do souboru XLSX. Export respektuje stejná pravidla
+viditelnosti jako přehled — každý uživatel exportuje pouze tikety,
+ke kterým má přístup.
+
+Sloupce exportu: #, Název, Typ, Stav, Priorita, Oblast, Firma, Žadatel,
+Vytvořeno. Správce a administrátor mají navíc sloupec Řešitel. Řešitel,
+obchodník a správce mají navíc sloupec Hodiny.
 
 ### Navigace v detailu požadavku
 
