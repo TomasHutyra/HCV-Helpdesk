@@ -221,7 +221,7 @@ class TicketExportView(LoginRequiredMixin, View):
         qs = _apply_ticket_filters(qs, request.GET, user)
 
         show_hours = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
-        show_resolver = user.has_role(UserRole.MANAGER, UserRole.ADMIN)
+        show_resolver = True
 
         if show_hours:
             qs = qs.annotate(hours_sum=db_models.Sum('time_logs__hours'))

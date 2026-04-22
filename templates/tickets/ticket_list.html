@@ -96,7 +96,7 @@
           <th>{% trans "Priorita" %}</th>
           <th>{% trans "Oblast" %}</th>
           <th>{% trans "Firma" %}</th>
-          {% if is_manager %}<th>{% trans "Řešitel" %}</th>{% endif %}
+          <th>{% trans "Řešitel" %}</th>
           {% if show_hours %}<th style="text-align:right">{% trans "Hodiny" %}</th>{% endif %}
           <th>{% trans "Vytvořeno" %}</th>
         </tr>
@@ -111,13 +111,13 @@
           <td>{% include 'tickets/partials/priority_badge.html' with ticket=ticket %}</td>
           <td class="ticket-muted">{{ ticket.area.name|default:'—' }}</td>
           <td class="ticket-muted">{{ ticket.company.name }}</td>
-          {% if is_manager %}<td class="ticket-muted">{{ ticket.resolver|default:'—' }}</td>{% endif %}
+          <td class="ticket-muted">{{ ticket.resolver|default:'—' }}</td>
           {% if show_hours %}<td class="ticket-hours">{% if ticket.hours_sum %}{{ ticket.hours_sum }} h{% else %}—{% endif %}</td>{% endif %}
           <td class="ticket-date">{{ ticket.created_at|date:"d.m.Y" }}</td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="9" style="padding:32px;text-align:center;color:var(--c-text-light);font-size:13.5px">
+          <td colspan="10" style="padding:32px;text-align:center;color:var(--c-text-light);font-size:13.5px">
             {% trans "Žádné tikety neodpovídají filtru." %}
           </td>
         </tr>
@@ -140,6 +140,7 @@
         {% include 'tickets/partials/status_badge.html' with ticket=ticket %}
         {% include 'tickets/partials/priority_badge.html' with ticket=ticket %}
         <span class="ticket-card-company">{{ ticket.company.name }}</span>
+        {% if ticket.resolver %}<span class="ticket-card-company">{{ ticket.resolver }}</span>{% endif %}
       </div>
     </a>
     {% empty %}
