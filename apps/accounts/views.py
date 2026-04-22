@@ -162,6 +162,9 @@ class AreaListView(LoginRequiredMixin, ListView):
             return redirect('tickets:list')
         return super().dispatch(request, *args, **kwargs)
 
+    def get_queryset(self):
+        return Area.objects.prefetch_related('work_categories').all()
+
 
 class AreaCreateView(LoginRequiredMixin, CreateView):
     model = Area
@@ -192,6 +195,29 @@ class AreaUpdateView(LoginRequiredMixin, UpdateView):
             return redirect('tickets:list')
         return super().dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        from apps.tickets.models import WorkCategory
+        ctx = super().get_context_data(**kwargs)
+        area = self.object
+        assigned_pks = set(area.work_categories.values_list('pk', flat=True))
+        ctx['all_categories'] = [
+            {'cat': cat, 'assigned': cat.pk in assigned_pks}
+            for cat in WorkCategory.objects.order_by('name')
+        ]
+        return ctx
+
     def form_valid(self, form):
+        from apps.tickets.models import WorkCategory
+        area = form.save()
+        selected_pks = set(int(pk) for pk in self.request.POST.getlist('categories'))
+        for cat in WorkCategory.objects.all():
+            if cat.pk in selected_pks:
+                cat.areas.add(area)
+            else:
+                cat.areas.remove(area)
+        new_name = self.request.POST.get('new_category', '').strip()
+        if new_name:
+            new_cat = WorkCategory.objects.create(name=new_name)
+            new_cat.areas.add(area)
         messages.success(self.request, _('Oblast byla uložena.'))
-        return super().form_valid(form)
+        return redirect('accounts:area_list')

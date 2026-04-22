@@ -20,6 +20,10 @@ urlpatterns = [
     path('<int:pk>/comment/', views.AddCommentView.as_view(), name='add_comment'),
     path('<int:pk>/timelog/', views.AddTimeLogView.as_view(), name='add_timelog'),
     path('<int:pk>/attachments/upload/', views.AddAttachmentView.as_view(), name='add_attachment'),
+    # Správa kategorií práce (Administrátor)
+    path('work-categories/', views.WorkCategoryListView.as_view(), name='work_category_list'),
+    path('work-categories/new/', views.WorkCategoryCreateView.as_view(), name='work_category_create'),
+    path('work-categories/<int:pk>/edit/', views.WorkCategoryUpdateView.as_view(), name='work_category_update'),
     path('<int:pk>/attachments/<int:att_pk>/delete/', views.DeleteAttachmentView.as_view(), name='delete_attachment'),
     path('<int:pk>/attachments/<int:att_pk>/download/', views.DownloadAttachmentView.as_view(), name='download_attachment'),
 ]

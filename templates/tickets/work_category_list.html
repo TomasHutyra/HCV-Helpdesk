@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Kategorie práce" %} — HCV Helpdesk{% endblock %}
+{% block nav_work_categories %}active{% endblock %}
+{% block topbar_title %}{% trans "Kategorie práce" %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">{% trans "Kategorie práce" %}</h1>
+  <a href="{% url 'tickets:work_category_create' %}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    {% trans "Nová kategorie" %}
+  </a>
+</div>
+
+<div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>{% trans "Název" %}</th>
+        <th>{% trans "Oblasti" %}</th>
+        <th>{% trans "Tiketů" %}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cat in categories %}
+      <tr>
+        <td style="font-weight:600">{{ cat.name }}</td>
+        <td style="color:var(--c-text-muted)">
+          {% with areas=cat.areas.all %}
+          {% if areas %}{{ areas|join:", " }}{% else %}<span style="color:var(--c-text-light)">{% trans "— všechny oblasti —" %}</span>{% endif %}
+          {% endwith %}
+        </td>
+        <td style="color:var(--c-text-muted)">{{ cat.tickets.count }}</td>
+        <td style="text-align:right">
+          <a href="{% url 'tickets:work_category_update' cat.pk %}" class="btn btn-secondary btn-sm">{% trans "Upravit" %}</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" style="padding:28px;text-align:center;color:var(--c-text-light)">{% trans "Žádné kategorie." %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

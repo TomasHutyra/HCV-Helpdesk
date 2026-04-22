@@ -99,7 +99,7 @@
 
       <div style="display:flex;gap:8px;padding-top:4px">
         <button type="submit" class="btn btn-primary">{% trans "Uložit tiket" %}</button>
-        <a href="{% url 'tickets:list' %}" class="btn btn-secondary">{% trans "Zpět" %}</a>
+        <a href="{% if object %}{% url 'tickets:detail' object.pk %}{% else %}{% url 'tickets:list' %}{% endif %}" class="btn btn-secondary">{% trans "Zpět" %}</a>
       </div>
     </form>
   </div>

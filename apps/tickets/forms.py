@@ -169,6 +169,23 @@ class AttachmentUploadForm(forms.Form):
             raise forms.ValidationError(_('Soubor je příliš velký (max 5 MB).'))
 
 
+class WorkCategoryAdminForm(forms.ModelForm):
+    """Správa kategorií práce — administrátor."""
+    class Meta:
+        model = WorkCategory
+        fields = ('name', 'areas')
+        widgets = {
+            'areas': forms.CheckboxSelectMultiple(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].label = _('Název')
+        self.fields['areas'].label = _('Oblasti')
+        self.fields['areas'].required = False
+        self.fields['areas'].help_text = _('Prázdný výběr = kategorie platí pro všechny oblasti.')
+
+
 class WorkCategoryForm(forms.ModelForm):
     class Meta:
         model = Ticket

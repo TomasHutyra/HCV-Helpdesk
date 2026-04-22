@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as db_models
 from django.http import Http404, HttpResponse, FileResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext as _
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
@@ -15,9 +15,9 @@ from apps.accounts.models import UserRole
 from .forms import (
     TicketCreateForm, TicketUpdateForm, AssignResolverForm, AssignSalesForm,
     ResolveForm, RejectForm, ChangeTypeForm, CommentForm, TimeLogForm,
-    TicketFilterForm, AttachmentUploadForm,
+    TicketFilterForm, AttachmentUploadForm, WorkCategoryAdminForm,
 )
-from .models import Ticket, Comment, TimeLog, TicketAttachment, TicketChange, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
+from .models import Ticket, Comment, TimeLog, TicketAttachment, TicketChange, WorkCategory, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
 
 
 def _log_change(ticket, user, field, old_value='', new_value=''):
@@ -837,5 +837,62 @@ class AddTimeLogView(LoginRequiredMixin, View):
                     'time_logs': ticket.time_logs.select_related('user').all(),
                 })
         return redirect('tickets:detail', pk=pk)
+
+
+# ------------------------------------------------------------------ #
+# Správa kategorií práce (Administrátor)                              #
+# ------------------------------------------------------------------ #
+
+def _admin_only(request):
+    if not request.user.is_authenticated or not request.user.has_role(UserRole.ADMIN):
+        messages.error(request, _('Nemáte oprávnění.'))
+        return True
+    return False
+
+
+class WorkCategoryListView(LoginRequiredMixin, ListView):
+    model = WorkCategory
+    template_name = 'tickets/work_category_list.html'
+    context_object_name = 'categories'
+
+    def dispatch(self, request, *args, **kwargs):
+        if _admin_only(request):
+            return redirect('tickets:list')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return WorkCategory.objects.prefetch_related('areas').all()
+
+
+class WorkCategoryCreateView(LoginRequiredMixin, CreateView):
+    model = WorkCategory
+    form_class = WorkCategoryAdminForm
+    template_name = 'tickets/work_category_form.html'
+    success_url = reverse_lazy('tickets:work_category_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if _admin_only(request):
+            return redirect('tickets:list')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        messages.success(self.request, _('Kategorie byla vytvořena.'))
+        return super().form_valid(form)
+
+
+class WorkCategoryUpdateView(LoginRequiredMixin, UpdateView):
+    model = WorkCategory
+    form_class = WorkCategoryAdminForm
+    template_name = 'tickets/work_category_form.html'
+    success_url = reverse_lazy('tickets:work_category_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if _admin_only(request):
+            return redirect('tickets:list')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        messages.success(self.request, _('Kategorie byla uložena.'))
+        return super().form_valid(form)
 
 

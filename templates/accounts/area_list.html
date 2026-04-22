@@ -21,6 +21,7 @@
         <th>{% trans "Název oblasti" %}</th>
         <th>{% trans "Neznámá" %}</th>
         <th>{% trans "Tiketů" %}</th>
+        <th>{% trans "Kategorie práce" %}</th>
         <th></th>
       </tr>
     </thead>
@@ -36,12 +37,19 @@
           {% endif %}
         </td>
         <td style="color:var(--c-text-muted)">{{ area.tickets.count }}</td>
+        <td style="color:var(--c-text-muted);font-size:13px">
+          {% with cats=area.work_categories.all %}
+          {% if cats %}
+            {% for cat in cats %}<span>{{ cat.name }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}
+          {% else %}—{% endif %}
+          {% endwith %}
+        </td>
         <td style="text-align:right">
           <a href="{% url 'accounts:area_update' area.pk %}" class="btn btn-secondary btn-sm">{% trans "Upravit" %}</a>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="4" style="padding:28px;text-align:center;color:var(--c-text-light)">{% trans "Žádné oblasti." %}</td></tr>
+      <tr><td colspan="5" style="padding:28px;text-align:center;color:var(--c-text-light)">{% trans "Žádné oblasti." %}</td></tr>
       {% endfor %}
     </tbody>
   </table>
