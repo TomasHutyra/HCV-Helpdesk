@@ -1,11 +1,22 @@
 from django.contrib import admin
-from .models import Ticket, Comment, TimeLog, Area, TicketAttachment, TicketChange
+from .models import Ticket, Comment, TimeLog, Area, TicketAttachment, TicketChange, WorkCategory
 
 
 @admin.register(Area)
 class AreaAdmin(admin.ModelAdmin):
     list_display = ('name', 'is_unknown', 'created_at')
     list_filter = ('is_unknown',)
+
+
+@admin.register(WorkCategory)
+class WorkCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'area_list')
+    filter_horizontal = ('areas',)
+
+    @admin.display(description='Oblasti')
+    def area_list(self, obj):
+        areas = list(obj.areas.all())
+        return ', '.join(str(a) for a in areas) if areas else '— všechny oblasti —'
 
 
 class CommentInline(admin.TabularInline):

@@ -76,6 +76,18 @@
       </div>
       {% endif %}
 
+      {% if object and form.work_category %}
+      <div class="form-group">
+        <label class="form-label">{{ form.work_category.label }}</label>
+        <select name="work_category">
+          <option value="">{% trans "— bez kategorie —" %}</option>
+          {% for cat in form.fields.work_category.queryset %}
+          <option value="{{ cat.pk }}" {% if form.work_category.value|stringformat:"s" == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
       {% if not object %}
       <div class="form-group">
         <label class="form-label">{% trans "Přílohy" %} <span style="font-weight:400;color:var(--c-text-muted)">({% trans "volitelné" %})</span></label>

@@ -42,6 +42,25 @@ class Area(models.Model):
         return cls.objects.filter(is_unknown=True).first()
 
 
+class WorkCategory(models.Model):
+    """Interní kategorie práce — přiřazuje řešitel nebo správce, žadatel nevidí."""
+    name = models.CharField(_('název'), max_length=100)
+    areas = models.ManyToManyField(
+        'Area', blank=True,
+        related_name='work_categories',
+        verbose_name=_('oblasti'),
+        help_text=_('Prázdný výběr = kategorie platí pro všechny oblasti.'),
+    )
+
+    class Meta:
+        verbose_name = _('kategorie práce')
+        verbose_name_plural = _('kategorie práce')
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Ticket(models.Model):
     # --- Typy tiketů ---
     TYPE_PROBLEM = 'problem'
@@ -116,6 +135,12 @@ class Ticket(models.Model):
         'accounts.User', on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='sales_tickets', verbose_name=_('obchodník'),
+    )
+
+    work_category = models.ForeignKey(
+        'WorkCategory', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='tickets', verbose_name=_('kategorie práce'),
     )
 
     resolution_notes = models.TextField(_('způsob vyřešení'), blank=True)
@@ -265,10 +290,10 @@ class TicketChange(models.Model):
     FIELD_DESCRIPTION = 'description'
     FIELD_ATTACHMENT_ADDED = 'attachment_added'
     FIELD_ATTACHMENT_DELETED = 'attachment_deleted'
-    # Interní pole — skrytá před žadatelem (rezerva pro budoucí záznamy hodin)
     FIELD_TIMELOG = 'timelog'
+    FIELD_WORK_CATEGORY = 'work_category'
 
-    INTERNAL_FIELDS = {FIELD_TIMELOG}
+    INTERNAL_FIELDS = {FIELD_TIMELOG, FIELD_WORK_CATEGORY}
 
     ticket = models.ForeignKey(
         Ticket, on_delete=models.CASCADE,
@@ -311,6 +336,7 @@ class TicketChange(models.Model):
             self.FIELD_SALES: _('Obchodník'),
             self.FIELD_TITLE: _('Název'),
             self.FIELD_DESCRIPTION: _('Popis'),
+            self.FIELD_WORK_CATEGORY: _('Kategorie práce'),
         }
         label = labels.get(self.field, self.field)
         if self.old_value:

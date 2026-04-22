@@ -895,6 +895,11 @@ textarea { resize: vertical; min-height: 80px; }
 .meta-row:last-child { border-bottom: none; }
 .meta-label { color: var(--c-text-muted); flex-shrink: 0; }
 .meta-value { font-weight: 600; text-align: right; }
+.meta-select {
+  width: 100%; font-size: 13px; padding: 3px 6px;
+  border: 1px solid var(--c-border); border-radius: var(--r);
+  background: var(--c-bg); color: var(--c-text); font-weight: 600;
+}
 
 /* Note boxes */
 .note-box {

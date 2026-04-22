@@ -1,6 +1,7 @@
 from django import forms
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
-from .models import Ticket, Comment, TimeLog, Area, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
+from .models import Ticket, Comment, TimeLog, Area, WorkCategory, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
 
 
 class TicketCreateForm(forms.ModelForm):
@@ -22,14 +23,24 @@ class TicketCreateForm(forms.ModelForm):
 
 
 class TicketUpdateForm(forms.ModelForm):
-    """Pro Řešitele a Správce — mohou měnit typ, prioritu, oblast."""
+    """Pro Řešitele a Správce — mohou měnit typ, prioritu, oblast, kategorii práce."""
     class Meta:
         model = Ticket
-        fields = ('type', 'title', 'description', 'area', 'priority')
+        fields = ('type', 'title', 'description', 'area', 'priority', 'work_category')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, area=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['description'].widget = forms.Textarea(attrs={'rows': 5})
+        if area and not area.is_unknown:
+            qs = WorkCategory.objects.filter(
+                Q(areas=area) | Q(areas__isnull=True)
+            ).distinct()
+        else:
+            qs = WorkCategory.objects.all()
+        self.fields['work_category'].queryset = qs
+        self.fields['work_category'].label = _('Kategorie práce')
+        self.fields['work_category'].required = False
+        self.fields['work_category'].empty_label = _('— bez kategorie —')
 
 
 class AssignResolverForm(forms.ModelForm):
@@ -156,6 +167,25 @@ class AttachmentUploadForm(forms.Form):
             )
         if f.size > MAX_UPLOAD_SIZE:
             raise forms.ValidationError(_('Soubor je příliš velký (max 5 MB).'))
+
+
+class WorkCategoryForm(forms.ModelForm):
+    class Meta:
+        model = Ticket
+        fields = ('work_category',)
+
+    def __init__(self, *args, area=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if area and not area.is_unknown:
+            qs = WorkCategory.objects.filter(
+                Q(areas=area) | Q(areas__isnull=True)
+            ).distinct()
+        else:
+            qs = WorkCategory.objects.all()
+        self.fields['work_category'].queryset = qs
+        self.fields['work_category'].label = _('Kategorie práce')
+        self.fields['work_category'].required = False
+        self.fields['work_category'].empty_label = _('— bez kategorie —')
 
 
 class TicketFilterForm(forms.Form):

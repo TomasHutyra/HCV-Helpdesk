@@ -1,0 +1,18 @@
+{% load i18n %}
+<div id="work-category-widget">
+  {% if can_set_work_category %}
+  <form hx-post="{% url 'tickets:set_work_category' ticket.pk %}"
+        hx-target="#work-category-widget" hx-swap="outerHTML">
+    {% csrf_token %}
+    <select name="work_category" class="meta-select"
+            onchange="this.closest('form').dispatchEvent(new Event('submit',{bubbles:true}))">
+      <option value="">{% trans "— bez kategorie —" %}</option>
+      {% for cat in work_category_form.fields.work_category.queryset %}
+      <option value="{{ cat.pk }}" {% if ticket.work_category_id == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  {% else %}
+  <span class="meta-value">{{ ticket.work_category|default:'—' }}</span>
+  {% endif %}
+</div>

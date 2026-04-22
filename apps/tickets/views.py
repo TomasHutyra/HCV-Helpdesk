@@ -362,7 +362,6 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         ctx['attachments'] = attachments
         ctx['can_add_attachment'] = _can_add_attachment(user, ticket)
         ctx['attachment_form'] = AttachmentUploadForm()
-        # Množina PKs příloh, které smí uživatel smazat
         ctx['deletable_attachment_pks'] = {
             att.pk for att in attachments if _can_delete_attachment(user, att)
         }
@@ -431,10 +430,12 @@ class TicketUpdateView(LoginRequiredMixin, UpdateView):
             return redirect('tickets:detail', pk=ticket.pk)
         return super().dispatch(request, *args, **kwargs)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['area'] = self.object.area
+        return kwargs
+
     def form_valid(self, form):
-        # Načteme nezávislou kopii z DB jako referenci "before" — form.save(commit=False)
-        # modifikuje self.object in-place, takže nelze spolehlivě zachytit staré hodnoty
-        # ze self.object po zavolání form.save.
         old = Ticket.objects.select_related('area').get(pk=self.object.pk)
         old_description = old.description
         old_title = old.title
@@ -455,15 +456,19 @@ class TicketUpdateView(LoginRequiredMixin, UpdateView):
             _log_change(ticket, user, TicketChange.FIELD_PRIORITY,
                         _priority_label(old.priority), _priority_label(ticket.priority))
         if old.area_id != ticket.area_id:
-            new_area_name = str(ticket.area) if ticket.area else '—'
             _log_change(ticket, user, TicketChange.FIELD_AREA,
-                        str(old.area) if old.area else '—', new_area_name)
+                        str(old.area) if old.area else '—',
+                        str(ticket.area) if ticket.area else '—')
         if old_title != ticket.title:
             _log_change(ticket, user, TicketChange.FIELD_TITLE,
                         old_title[:200], ticket.title[:200])
         if old_description != ticket.description:
             _log_change(ticket, user, TicketChange.FIELD_DESCRIPTION,
                         old_value=old_description)
+        if old.work_category_id != ticket.work_category_id:
+            _log_change(ticket, user, TicketChange.FIELD_WORK_CATEGORY,
+                        str(old.work_category) if old.work_category else '',
+                        str(ticket.work_category) if ticket.work_category else '')
 
         messages.success(self.request, _('Tiket byl uložen.'))
         return redirect('tickets:detail', pk=ticket.pk)
@@ -832,3 +837,5 @@ class AddTimeLogView(LoginRequiredMixin, View):
                     'time_logs': ticket.time_logs.select_related('user').all(),
                 })
         return redirect('tickets:detail', pk=pk)
+
+
