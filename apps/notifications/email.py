@@ -15,10 +15,17 @@ def _sanitize_subject(subject):
     return subject.replace('\r', '').replace('\n', ' ')
 
 
-def _send(subject, template, context, recipients):
+def _ticket_token(ticket_id):
+    return f'[#{ticket_id}#]'
+
+
+def _send(subject, template, context, recipients, ticket_id=None):
     """Odešle e-mail na seznam příjemců. Chyby loguje, ale nevyhazuje výjimku."""
     if not recipients:
         return
+    if ticket_id:
+        subject = f'{subject} {_ticket_token(ticket_id)}'
+        context = {**context, 'reply_ticket_id': ticket_id}
     body = render_to_string(template, context)
     try:
         send_mail(
@@ -55,6 +62,7 @@ def send_new_ticket(ticket):
         template='emails/new_ticket.txt',
         context={'ticket': ticket},
         recipients=recipients,
+        ticket_id=ticket.pk,
     )
 
 
@@ -65,6 +73,7 @@ def send_status_change(ticket):
         template='emails/status_change.txt',
         context={'ticket': ticket},
         recipients=[ticket.requester.email],
+        ticket_id=ticket.pk,
     )
 
 
@@ -83,6 +92,7 @@ def send_new_comment(comment):
         template='emails/new_comment.txt',
         context={'ticket': ticket, 'comment': comment},
         recipients=list(recipients_set),
+        ticket_id=ticket.pk,
     )
 
 
@@ -93,6 +103,7 @@ def send_assigned_to_you(ticket, assignee):
         template='emails/assigned_to_you.txt',
         context={'ticket': ticket},
         recipients=[assignee.email],
+        ticket_id=ticket.pk,
     )
 
 
@@ -103,4 +114,5 @@ def send_ticket_closed(ticket, closed_as):
         template='emails/ticket_closed.txt',
         context={'ticket': ticket, 'closed_as': closed_as},
         recipients=[ticket.requester.email],
+        ticket_id=ticket.pk,
     )

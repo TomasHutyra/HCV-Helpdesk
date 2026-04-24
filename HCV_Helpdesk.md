@@ -126,7 +126,13 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
   - Přiřazuje žadatele k firmám
 
-  - Zakládá a spravuje oblasti (název, příznak „neznámá")
+  - Zakládá a spravuje oblasti (název, příznak „neznámá"); v přehledu
+    oblastí vidí, které kategorie práce jsou k dané oblasti přiřazeny;
+    při editaci oblasti může přímo přiřadit existující kategorie nebo
+    vytvořit novou
+
+  - Zakládá a spravuje kategorie práce (název, seznam oblastí) přes
+    webové rozhraní (stránka „Kategorie práce" v menu)
 
   - Nastavuje omezení správcům — seznam oblastí a/nebo firem přímo
     na stránce „Upravit uživatele" (pole se zobrazí pouze pokud má
@@ -147,8 +153,9 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | Vytvořit tiket | ✓ | — | — | ✓ | — |
 | Editovat tiket (název, popis, typ, oblast, priorita) | — | přiřazený ² | — | ✓ ¹ ² | — |
 | Změnit typ tiketu | — | přiřazený ² | — | ✓ ¹ ² | — |
+| Nastavit kategorii práce | — | přiřazený ² | — | ✓ ¹ ² | — |
 | **Tikety — komentáře, čas a přílohy** | | | | | |
-| Komentovat tiket | jen vlastní | přiřazený | přiřazený | ✓ ¹ | — |
+| Komentovat tiket | jen vlastní ⁵ | přiřazený (jen otevřený) | přiřazený (jen otevřený) | ✓ ¹ | — |
 | Zapsat čas | — | přiřazený | přiřazený | jen pokud přiřazen ³ | — |
 | Přidat přílohu | jen vlastní | přiřazený | přiřazený | ✓ ¹ | — |
 | Smazat přílohu | vlastní přílohy | vlastní přílohy | vlastní přílohy | ✓ ¹ | ✓ |
@@ -168,6 +175,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | Spravovat oblasti | — | — | — | — | ✓ |
 | Nastavit omezení správcům (oblasti, firmy) | — | — | — | — | ✓ |
 | Nastavit oblasti řešitelům | — | — | — | — | ✓ |
+| Spravovat kategorie práce | — | — | — | — | ✓ |
 
 ¹ V rámci nastaveného omezení oblasti a firem správce (pokud není omezení nastaveno, platí pro všechny tikety).
 
@@ -176,6 +184,8 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 ³ Správce smí zapisovat čas průběžně pouze tehdy, je-li k danému tiketu zároveň přiřazen jako řešitel nebo obchodník.
 
 ⁴ Řešitel vidí (a může převzít) nové tikety v rámci svých oblastí (nebo všechny, pokud nemá omezení), ale komentovat je může až po přiřazení. Přiřazené tikety vidí vždy bez ohledu na oblast.
+
+⁵ Žadatel může komentovat vlastní tiket i ve stavu „Vyřešeno" nebo „Zamítnuto" (může nesouhlasit s uzavřením). Řešitel a obchodník komentovat uzavřený tiket nemohou. Správce uzavřený tiket komentovat může (může reagovat nebo tiket znovu otevřít).
 
 ## Požadavky
 
@@ -218,6 +228,33 @@ Ochrana proti zneužití:
 
 - Rate limiting — jeden žadatel může prostřednictvím e-mailu vytvořit
   nejvýše 10 tiketů za hodinu; další e-maily jsou v daném okně ignorovány.
+
+### Odpověď na notifikaci → komentář (reply-to-ticket)
+
+Každý odchozí notifikační e-mail obsahuje v předmětu i těle token ve
+tvaru `[#42#]` (číslo tiketu). Odesílatel může na notifikaci odpovědět
+a systém odpověď automaticky přidá jako komentář k danému tiketu.
+
+Pravidla zpracování příchozí odpovědi:
+
+- Token `[#42#]` je hledán v předmětu i těle e-mailu (plain text).
+  Pokud je přítomen v obou a čísla se liší, e-mail je ignorován.
+
+- Odesílatel musí být libovolný aktivní uživatel systému (nejen Žadatel).
+
+- Platí stejná oprávnění jako při komentování na webu — viz sekci
+  Komentáře níže.
+
+- Z těla odpovědi je automaticky odstraněn citovaný text (quoted reply),
+  komentář obsahuje pouze nový obsah.
+
+- Přílohy jsou uloženy jako přílohy tiketu (stejná pravidla jako jiné
+  přílohy z e-mailu).
+
+- Rate limiting je sdílený s vytváříním tiketů (10 e-mailových akcí/hod
+  na odesílatele).
+
+- Po přidání komentáře se odešle standardní notifikace o novém komentáři.
 
 Požadavky mohu být typu
 
@@ -318,6 +355,22 @@ zároveň přiřazen jako řešitel nebo obchodník). Záznamy jsou viditelné
 Při vyřešení požadavku je pole „Hodiny" povinné, pokud k požadavku dosud
 neexistuje žádný záznam času. Pokud již záznamy existují, pole je
 volitelné.
+
+### Kategorie práce
+
+Každý tiket může mít přiřazenu interní kategorii práce (např. instalace
+kabeláže, vývoj, implementace, analýza, konfigurace HW). Kategorie je
+interní — žadatel ji nevidí ani v detailu, ani v přehledu.
+
+Kategorii může nastavit přiřazený řešitel nebo správce (v rámci svého
+omezení). Kategorie jsou vázány na oblasti — při editaci tiketu se
+zobrazí pouze kategorie přiřazené k oblasti daného tiketu; pokud oblast
+tiketu nemá přiřazeny žádné kategorie, zobrazí se všechny.
+
+Správa kategorií (přidávání, úprava) je dostupná pouze administrátorovi
+přes webové rozhraní. Každá kategorie má název a seznam oblastí, ke
+kterým patří. Administrátor může přiřadit kategorie oblasti také přímo
+z formuláře editace oblasti.
 
 ### Notifikace
 

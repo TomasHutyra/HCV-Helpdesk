@@ -7,6 +7,7 @@ Lokálně (CELERY_TASK_ALWAYS_EAGER=True) lze volat přímo pro testování.
 import email
 import logging
 import os
+import re
 from email.header import decode_header, make_header
 
 from django.conf import settings
@@ -37,13 +38,113 @@ def _get_body(msg):
     return body.strip()
 
 
-def _find_user_by_email(from_email):
-    """Najde uživatele s rolí Žadatel podle e-mailové adresy."""
+def _find_requester_by_email(from_email):
+    """Najde uživatele s rolí Žadatel podle e-mailové adresy (pro vytváření tiketů)."""
     from apps.accounts.models import User, UserRole
     try:
         return User.objects.get(email__iexact=from_email, user_roles__role=UserRole.REQUESTER, is_active=True)
     except User.DoesNotExist:
         return None
+
+
+def _find_any_user_by_email(from_email):
+    """Najde libovolného aktivního uživatele podle e-mailové adresy (pro odpovědi)."""
+    from apps.accounts.models import User
+    try:
+        return User.objects.get(email__iexact=from_email, is_active=True)
+    except User.DoesNotExist:
+        return None
+
+
+_TICKET_TOKEN_RE = re.compile(r'\[#(\d+)#\]')
+
+
+def _extract_ticket_id(subject, body):
+    """Extrahuje ID tiketu z tokenu [#42#] v předmětu nebo těle e-mailu.
+
+    Pokud je token v obou a ID se neshodují, vrátí None (podezřelý e-mail).
+    """
+    m_subject = _TICKET_TOKEN_RE.search(subject)
+    m_body = _TICKET_TOKEN_RE.search(body)
+    id_subject = int(m_subject.group(1)) if m_subject else None
+    id_body = int(m_body.group(1)) if m_body else None
+    if id_subject is not None and id_body is not None and id_subject != id_body:
+        logger.warning('Token v předmětu (#%s) a těle (#%s) se neshodují — e-mail ignorován.', id_subject, id_body)
+        return None
+    return id_subject if id_subject is not None else id_body
+
+
+_QUOTE_HEADER_RE = re.compile(
+    r'^(On |Dne |Am |Le |El ).{5,100}(wrote:|napsal[a]?:|schrieb:|a écrit:|escribió:)\s*$',
+    re.IGNORECASE | re.MULTILINE,
+)
+_ORIGINAL_MSG_RE = re.compile(r'^-{3,}[^-\r\n]', re.MULTILINE)
+# Zachytí "-----Original Message-----", "---------- Původní e‑mail ----------" apod.
+# Nezachytí holou oddělovací čáru "------..." (bez textu).
+
+_OUTLOOK_HEADER_RE = re.compile(
+    r'^(From|Od|De|Van): .+\r?\n(Sent|Odesláno|Envoyé|Verzonden): ',
+    re.MULTILINE,
+)
+# Zachytí Outlook reply header ve formátu "From: ...\nSent: ..." (EN, CZ, FR, NL).
+
+
+def _strip_quoted_text(body):
+    """Odstraní citovaný text z odpovědi, ponechá pouze nový obsah."""
+    cut = len(body)
+    for pattern in (
+        re.compile(r'^>.*$', re.MULTILINE),
+        _QUOTE_HEADER_RE,
+        _ORIGINAL_MSG_RE,
+        _OUTLOOK_HEADER_RE,
+    ):
+        m = pattern.search(body)
+        if m:
+            cut = min(cut, m.start())
+    return body[:cut].strip()
+
+
+def _can_add_email_comment(user, ticket):
+    """Vrátí True, pokud smí uživatel přidat komentář k tiketu přes e-mail."""
+    from apps.accounts.models import UserRole
+    from apps.tickets.models import Ticket
+    is_closed = ticket.status in (Ticket.STATUS_RESOLVED, Ticket.STATUS_REJECTED)
+    if user.has_role(UserRole.ADMIN):
+        return True
+    if user.has_role(UserRole.MANAGER):
+        return user.can_see_ticket_as_manager(ticket)
+    if is_closed:
+        return user.has_role(UserRole.REQUESTER) and ticket.requester == user
+    if user.has_role(UserRole.REQUESTER):
+        return ticket.requester == user
+    if user.has_role(UserRole.RESOLVER):
+        return ticket.resolver == user
+    if user.has_role(UserRole.SALES):
+        return ticket.sales == user
+    return False
+
+
+def _process_reply(ticket_id, raw_body, sender_user, attachments):
+    """Zpracuje příchozí odpověď na notifikaci a přidá ji jako komentář k tiketu."""
+    from apps.tickets.models import Ticket, Comment
+    try:
+        ticket = Ticket.objects.get(pk=ticket_id)
+    except Ticket.DoesNotExist:
+        logger.warning('Tiket #%s neexistuje — odpověď ignorována.', ticket_id)
+        return
+    if not _can_add_email_comment(sender_user, ticket):
+        logger.warning('Uživatel %s nemá oprávnění komentovat tiket #%s.', sender_user.email, ticket_id)
+        return
+    body = _strip_quoted_text(raw_body)
+    if not body:
+        logger.warning('Prázdné tělo odpovědi od %s k tiketu #%s — ignorováno.', sender_user.email, ticket_id)
+        return
+    comment = Comment.objects.create(ticket=ticket, author=sender_user, body=body)
+    logger.info('Vytvořen komentář #%s k tiketu #%s z e-mailu od %s.', comment.pk, ticket_id, sender_user.email)
+    if attachments:
+        _save_attachments(ticket, sender_user, attachments)
+    from apps.notifications.tasks import notify_new_comment
+    notify_new_comment.delay(comment.pk)
 
 
 def _is_duplicate(message_id):
@@ -187,22 +288,36 @@ def process_inbox():
                 server.add_flags(uid, [imapclient.SEEN])
                 continue
 
-            requester = _find_user_by_email(from_email)
-            if requester is None:
-                logger.warning('Neznámý odesílatel: %s — tiket nevytvořen.', from_email)
-                # Přesto označit jako přečtený, aby se znovu nezpracoval
-                server.add_flags(uid, [imapclient.SEEN])
-                continue
-
-            # Rate limiting — přeskočit, pokud odesílatel překročil hodinový limit
-            if _is_rate_limited(from_email):
-                logger.warning('Rate limit překročen pro %s — tiket nevytvořen.', from_email)
-                server.add_flags(uid, [imapclient.SEEN])
-                continue
-
             body = _get_body(msg)
-            attachments = _get_attachments(msg)
-            _create_ticket_from_email(subject, body, requester, attachments)
+            ticket_id = _extract_ticket_id(subject, body)
+
+            if ticket_id is not None:
+                # Odpověď na notifikaci → nový komentář
+                user = _find_any_user_by_email(from_email)
+                if user is None:
+                    logger.warning('Neznámý odesílatel %s — odpověď ignorována.', from_email)
+                    server.add_flags(uid, [imapclient.SEEN])
+                    continue
+                if _is_rate_limited(from_email):
+                    logger.warning('Rate limit překročen pro %s — odpověď ignorována.', from_email)
+                    server.add_flags(uid, [imapclient.SEEN])
+                    continue
+                attachments = _get_attachments(msg)
+                _process_reply(ticket_id, body, user, attachments)
+            else:
+                # Nový e-mail bez tokenu → nový tiket
+                requester = _find_requester_by_email(from_email)
+                if requester is None:
+                    logger.warning('Neznámý odesílatel: %s — tiket nevytvořen.', from_email)
+                    server.add_flags(uid, [imapclient.SEEN])
+                    continue
+                if _is_rate_limited(from_email):
+                    logger.warning('Rate limit překročen pro %s — tiket nevytvořen.', from_email)
+                    server.add_flags(uid, [imapclient.SEEN])
+                    continue
+                attachments = _get_attachments(msg)
+                _create_ticket_from_email(subject, body, requester, attachments)
+
             server.add_flags(uid, [imapclient.SEEN])
 
         server.logout()

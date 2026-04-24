@@ -49,6 +49,29 @@ def _validate_upload(f):
     return None
 
 
+def _can_comment(user, ticket):
+    """Vrátí True, pokud smí uživatel komentovat tiket.
+
+    Uzavřený tiket (Vyřešeno/Zamítnuto) mohou komentovat pouze žadatel a správce.
+    """
+    is_closed = ticket.status in (Ticket.STATUS_RESOLVED, Ticket.STATUS_REJECTED)
+    if user.has_role(UserRole.ADMIN):
+        return True
+    if user.has_role(UserRole.MANAGER):
+        return user.can_see_ticket_as_manager(ticket)
+    if is_closed:
+        # Na uzavřeném tiketu může komentovat pouze ten, kdo tiket založil
+        # A zároveň má roli REQUESTER (pokrývá i případ resolver+requester).
+        return user.has_role(UserRole.REQUESTER) and ticket.requester == user
+    if user.has_role(UserRole.RESOLVER):
+        return ticket.resolver == user
+    if user.has_role(UserRole.SALES):
+        return ticket.sales == user
+    if user.has_role(UserRole.REQUESTER):
+        return ticket.requester == user
+    return False
+
+
 def _can_add_attachment(user, ticket):
     """Smí uživatel přidávat přílohy k tiketu?"""
     if user.has_role(UserRole.ADMIN):
@@ -334,18 +357,7 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         ctx['assign_sales_form'] = AssignSalesForm(instance=ticket)
         ctx['change_type_form'] = ChangeTypeForm(instance=ticket)
         ctx['can_edit'] = _can_edit_ticket(user, ticket)
-        if user.has_role(UserRole.ADMIN):
-            ctx['can_comment'] = True
-        elif user.has_role(UserRole.MANAGER):
-            ctx['can_comment'] = user.can_see_ticket_as_manager(ticket)
-        elif user.has_role(UserRole.RESOLVER):
-            ctx['can_comment'] = ticket.resolver == user
-        elif user.has_role(UserRole.SALES):
-            ctx['can_comment'] = ticket.sales == user
-        elif user.has_role(UserRole.REQUESTER):
-            ctx['can_comment'] = ticket.requester == user
-        else:
-            ctx['can_comment'] = False
+        ctx['can_comment'] = _can_comment(user, ticket)
         show_hours = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
         ctx['show_hours'] = show_hours
         ctx['has_timelogs'] = ticket.time_logs.exists()
@@ -669,19 +681,7 @@ class AddCommentView(LoginRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk)
         user = request.user
-        # Každá role smí komentovat pouze tikety, ke kterým má přístup
-        if user.has_role(UserRole.ADMIN):
-            can_comment = True
-        elif user.has_role(UserRole.MANAGER):
-            can_comment = user.can_see_ticket_as_manager(ticket)
-        elif user.has_role(UserRole.RESOLVER):
-            can_comment = ticket.resolver == user
-        elif user.has_role(UserRole.SALES):
-            can_comment = ticket.sales == user
-        elif user.has_role(UserRole.REQUESTER):
-            can_comment = ticket.requester == user
-        else:
-            can_comment = False
+        can_comment = _can_comment(user, ticket)
         if not can_comment:
             messages.error(request, _('Nemáte oprávnění komentovat tento tiket.'))
             return redirect('tickets:list')

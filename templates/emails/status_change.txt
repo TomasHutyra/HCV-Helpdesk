@@ -5,3 +5,4 @@ Tiket #{{ ticket.pk }}: {{ ticket.title }}
 Nový stav: {{ ticket.get_status_display }}
 
 Pro zobrazení tiketu se přihlaste do systému HCV Helpdesk.
+{% if reply_ticket_id %}Odpovědí na tento e-mail přidáte komentář k tiketu #{{ reply_ticket_id }}. [#{{ reply_ticket_id }}#]{% endif %}
