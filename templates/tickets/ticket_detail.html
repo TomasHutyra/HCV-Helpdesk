@@ -152,7 +152,7 @@
     {% endif %}
 
     {# Take ticket (resolver only, status new) #}
-    {% if is_resolver and ticket.status == 'new' and ticket.resolver != request.user %}
+    {% if is_resolver and ticket.resolver != request.user and ticket.status == 'new' or is_resolver and ticket.resolver != request.user and ticket.status == 'in_progress' %}
     <div class="card card-body-sm">
       <div class="panel-title">{% trans "Převzít tiket" %}</div>
       <form method="post" action="{% url 'tickets:take' ticket.pk %}">

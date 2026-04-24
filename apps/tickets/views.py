@@ -557,23 +557,26 @@ class TakeTicketView(LoginRequiredMixin, View):
         if not request.user.has_role(UserRole.RESOLVER):
             messages.error(request, _('Nedostatečná oprávnění.'))
             return redirect('tickets:detail', pk=pk)
-        if ticket.status != Ticket.STATUS_NEW:
+        if ticket.status not in (Ticket.STATUS_NEW, Ticket.STATUS_IN_PROGRESS):
             messages.error(request, _('Tiket již nelze převzít.'))
             return redirect('tickets:detail', pk=pk)
         if not request.user.can_handle_ticket_area(ticket):
             messages.error(request, _('Nemáte oprávnění převzít tiket z této oblasti.'))
             return redirect('tickets:detail', pk=pk)
+        old_resolver = str(ticket.resolver) if ticket.resolver else ''
         old_status = ticket.status
         ticket.resolver = request.user
-        ticket.to_in_progress()
+        if ticket.status == Ticket.STATUS_NEW:
+            ticket.to_in_progress()
         ticket.save()
         from apps.notifications.tasks import notify_status_change, notify_assigned_to_resolver
-        notify_status_change.delay(ticket.pk)
         notify_assigned_to_resolver.delay(ticket.pk)
         _log_change(ticket, request.user, TicketChange.FIELD_RESOLVER,
-                    '', str(request.user))
-        _log_change(ticket, request.user, TicketChange.FIELD_STATUS,
-                    _status_label(old_status), _status_label(ticket.status))
+                    old_resolver, str(request.user))
+        if ticket.status != old_status:
+            notify_status_change.delay(ticket.pk)
+            _log_change(ticket, request.user, TicketChange.FIELD_STATUS,
+                        _status_label(old_status), _status_label(ticket.status))
         messages.success(request, _('Tiket byl převzat.'))
         return redirect('tickets:detail', pk=pk)
 

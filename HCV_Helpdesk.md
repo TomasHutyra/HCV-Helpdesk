@@ -61,8 +61,9 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
   - Může komentovat přiřazené požadavky (požadavky ve stavu „Nový",
     které mu dosud nebyly přiřazeny, komentovat nemůže)
 
-  - Může převzít požadavek ve stavu „Nový" — přiřadí se sám sobě
-    a požadavek přejde do stavu „Řeší se"; převzít lze pouze tiket
+  - Může převzít požadavek ve stavu „Nový" nebo „Řeší se" — přiřadí se
+    sám sobě; při převzetí z „Nový" přejde požadavek do stavu „Řeší se",
+    při převzetí z „Řeší se" se stav nemění; převzít lze pouze tiket
     z oblasti, kterou řešitel spravuje (nebo neznámé oblasti)
 
   - Může změnit typ požadavku, prioritu, oblast a stav požadavku
@@ -160,7 +161,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | Přidat přílohu | jen vlastní | přiřazený | přiřazený | ✓ ¹ | — |
 | Smazat přílohu | vlastní přílohy | vlastní přílohy | vlastní přílohy | ✓ ¹ | ✓ |
 | **Tikety — akce** | | | | | |
-| Převzít tiket (přiřadit se sám sobě) | — | Nový ⁴ | — | — | — |
+| Převzít tiket (přiřadit se sám sobě) | — | Nový, Řeší se ⁴ | — | — | — |
 | Přiřadit řešitele | — | — | — | ✓ ¹ | — |
 | Přiřadit obchodníka | — | — | — | ✓ ¹ | — |
 | Vyřešit tiket | — | přiřazený | — | ✓ ¹ | — |
@@ -183,7 +184,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
 ³ Správce smí zapisovat čas průběžně pouze tehdy, je-li k danému tiketu zároveň přiřazen jako řešitel nebo obchodník.
 
-⁴ Řešitel vidí (a může převzít) nové tikety v rámci svých oblastí (nebo všechny, pokud nemá omezení), ale komentovat je může až po přiřazení. Přiřazené tikety vidí vždy bez ohledu na oblast.
+⁴ Řešitel vidí (a může převzít) nové tikety v rámci svých oblastí (nebo všechny, pokud nemá omezení), ale komentovat je může až po přiřazení. Přiřazené tikety vidí vždy bez ohledu na oblast. Převzít lze i tiket ve stavu „Řeší se" — v takovém případě se změní pouze přiřazený řešitel, stav zůstane.
 
 ⁵ Žadatel může komentovat vlastní tiket i ve stavu „Vyřešeno" nebo „Zamítnuto" (může nesouhlasit s uzavřením). Řešitel a obchodník komentovat uzavřený tiket nemohou. Správce uzavřený tiket komentovat může (může reagovat nebo tiket znovu otevřít).
 
