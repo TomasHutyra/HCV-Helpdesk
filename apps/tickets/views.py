@@ -349,7 +349,7 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         user = self.request.user
         ctx['comment_form'] = CommentForm()
         ctx['timelog_form'] = TimeLogForm()
-        ctx['comments'] = ticket.comments.select_related('author').all()
+        ctx['comments'] = ticket.comments.select_related('author').order_by('-created_at')
         ctx['time_logs'] = ticket.time_logs.select_related('user').all()
         ctx['resolve_form'] = ResolveForm(instance=ticket)
         ctx['reject_form'] = RejectForm(instance=ticket)
@@ -696,7 +696,7 @@ class AddCommentView(LoginRequiredMixin, View):
             if request.htmx:
                 return render(request, 'tickets/partials/comment_list.html', {
                     'ticket': ticket,
-                    'comments': ticket.comments.select_related('author').all(),
+                    'comments': ticket.comments.select_related('author').order_by('-created_at'),
                     'comment_form': CommentForm(),
                     'can_comment': can_comment,
                 })
