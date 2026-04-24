@@ -38,9 +38,13 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
   - Může založit požadavek
 
-  - Vidí pouze požadavky, které sám založil
+  - Rozsah viditelnosti tiketů se nastavuje per-uživatel (administrátorem):
+    - **Pouze vlastní tikety** (výchozí) — vidí jen tikety, které sám založil
+    - **Všechny tikety firmy** — vidí všechny tikety své firmy
+    - **Tikety firmy v konkrétních oblastech** — vidí tikety firmy v zadaných
+      oblastech; vlastní tikety jsou vždy viditelné bez ohledu na oblast
 
-  - Může komentovat požadavky, které založil
+  - Může komentovat pouze tikety, které sám založil (bez ohledu na rozsah viditelnosti)
 
   - Má přiřazenu společnost, ke které patří
 
@@ -142,13 +146,17 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
   - Nastavuje oblasti řešitelům přímo na stránce „Upravit uživatele"
     (pole se zobrazí pouze pokud má uživatel přiřazenu roli Řešitel)
 
+  - Nastavuje rozsah viditelnosti tiketů žadatelům přímo na stránce
+    „Upravit uživatele" (pole se zobrazí pouze pokud má uživatel
+    přiřazenu roli Žadatel): výchozí hodnota je „Pouze vlastní tikety"
+
 ### Tabulka práv
 
 | Funkce | Žadatel | Řešitel | Obchodník | Správce | Administrátor |
 |--------|:-------:|:-------:|:---------:|:-------:|:-------------:|
 | **Tikety — čtení** | | | | | |
-| Vidí seznam tiketů | jen vlastní | přiřazené + všechny Nové ⁴ | jen přiřazené | všechny ¹ | všechny |
-| Vidí detail tiketu | jen vlastní | přiřazený + každý Nový ⁴ | jen přiřazený | všechny ¹ | všechny |
+| Vidí seznam tiketů | dle rozsahu ⁶ | přiřazené + všechny Nové ⁴ | jen přiřazené | všechny ¹ | všechny |
+| Vidí detail tiketu | dle rozsahu ⁶ | přiřazený + každý Nový ⁴ | jen přiřazený | všechny ¹ | všechny |
 | Vidí záznamy času a celkové hodiny | — | ✓ | ✓ | ✓ | — |
 | **Tikety — vytvoření a editace** | | | | | |
 | Vytvořit tiket | ✓ | — | — | ✓ | — |
@@ -176,6 +184,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | Spravovat oblasti | — | — | — | — | ✓ |
 | Nastavit omezení správcům (oblasti, firmy) | — | — | — | — | ✓ |
 | Nastavit oblasti řešitelům | — | — | — | — | ✓ |
+| Nastavit rozsah viditelnosti žadatelům | — | — | — | — | ✓ |
 | Spravovat kategorie práce | — | — | — | — | ✓ |
 
 ¹ V rámci nastaveného omezení oblasti a firem správce (pokud není omezení nastaveno, platí pro všechny tikety).
@@ -187,6 +196,8 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 ⁴ Řešitel vidí (a může převzít) nové tikety v rámci svých oblastí (nebo všechny, pokud nemá omezení), ale komentovat je může až po přiřazení. Přiřazené tikety vidí vždy bez ohledu na oblast. Převzít lze i tiket ve stavu „Řeší se" — v takovém případě se změní pouze přiřazený řešitel, stav zůstane.
 
 ⁵ Žadatel může komentovat vlastní tiket i ve stavu „Vyřešeno" nebo „Zamítnuto" (může nesouhlasit s uzavřením). Řešitel a obchodník komentovat uzavřený tiket nemohou. Správce uzavřený tiket komentovat může (může reagovat nebo tiket znovu otevřít).
+
+⁶ Rozsah viditelnosti žadatele nastavuje administrátor per-uživatel: (a) pouze vlastní tikety, (b) všechny tikety firmy, (c) tikety firmy v konkrétních oblastech (vlastní tikety jsou vždy viditelné). Právo komentovat má žadatel vždy jen u tiketů, které sám založil.
 
 ## Požadavky
 

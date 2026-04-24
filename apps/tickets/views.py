@@ -112,7 +112,7 @@ def _get_adjacent_tickets(user, ticket):
     elif user.has_role(UserRole.SALES):
         qs = qs.filter(sales=user)
     elif user.has_role(UserRole.REQUESTER):
-        qs = qs.filter(requester=user)
+        qs = qs.filter(user.get_requester_ticket_q())
     else:
         return None, None
     prev_pk = qs.filter(pk__lt=ticket.pk).order_by('-pk').values_list('pk', flat=True).first()
@@ -195,7 +195,7 @@ class TicketListView(LoginRequiredMixin, ListView):
         elif user.has_role(UserRole.SALES):
             qs = qs.filter(sales=user)
         elif user.has_role(UserRole.REQUESTER):
-            qs = qs.filter(requester=user)
+            qs = qs.filter(user.get_requester_ticket_q())
         else:
             qs = qs.none()
 
@@ -237,7 +237,7 @@ class TicketExportView(LoginRequiredMixin, View):
         elif user.has_role(UserRole.SALES):
             qs = qs.filter(sales=user)
         elif user.has_role(UserRole.REQUESTER):
-            qs = qs.filter(requester=user)
+            qs = qs.filter(user.get_requester_ticket_q())
         else:
             qs = qs.none()
 
@@ -329,7 +329,7 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
             return ticket
         if user.has_role(UserRole.SALES) and ticket.sales == user:
             return ticket
-        if user.has_role(UserRole.REQUESTER) and ticket.requester == user:
+        if user.has_role(UserRole.REQUESTER) and user.can_see_ticket_as_requester(ticket):
             return ticket
         messages.error(self.request, _('Nemáte přístup k tomuto tiketu.'))
         raise PermissionError()
@@ -796,7 +796,7 @@ class DownloadAttachmentView(LoginRequiredMixin, View):
         elif user.has_role(UserRole.SALES):
             allowed = ticket.sales == user
         elif user.has_role(UserRole.REQUESTER):
-            allowed = ticket.requester == user
+            allowed = user.can_see_ticket_as_requester(ticket)
 
         if not allowed:
             messages.error(request, _('Nemáte přístup k této příloze.'))

@@ -57,6 +57,29 @@ class User(AbstractUser):
         help_text=_('Řešitel vidí nové tikety pouze z těchto oblastí. Ponechte prázdné pro přístup ke všem novým tiketům.'),
     )
 
+    # ---- Rozsah viditelnosti žadatele ----
+    REQUESTER_SCOPE_OWN = 'own'
+    REQUESTER_SCOPE_COMPANY = 'company'
+    REQUESTER_SCOPE_COMPANY_AREAS = 'company_areas'
+    REQUESTER_SCOPE_CHOICES = [
+        ('own', _('Pouze vlastní tikety')),
+        ('company', _('Všechny tikety firmy')),
+        ('company_areas', _('Tikety firmy v konkrétních oblastech')),
+    ]
+    requester_scope = models.CharField(
+        _('rozsah viditelnosti tiketů'),
+        max_length=20,
+        choices=REQUESTER_SCOPE_CHOICES,
+        default=REQUESTER_SCOPE_OWN,
+    )
+    requester_areas = models.ManyToManyField(
+        'tickets.Area',
+        blank=True,
+        related_name='requester_users',
+        verbose_name=_('oblasti žadatele'),
+        help_text=_('Zobrazí se pouze tikety firmy z těchto oblastí. Vlastní tikety jsou viditelné vždy.'),
+    )
+
     class Meta:
         verbose_name = _('uživatel')
         verbose_name_plural = _('uživatelé')
@@ -97,6 +120,32 @@ class User(AbstractUser):
         if self.has_role(UserRole.MANAGER, UserRole.ADMIN, UserRole.RESOLVER, UserRole.SALES):
             return '/tickets/'
         return '/tickets/'
+
+    # ------------------------------------------------------------------ #
+    # Rozsah viditelnosti žadatele                                        #
+    # ------------------------------------------------------------------ #
+
+    def get_requester_ticket_q(self):
+        """Vrátí Q výraz pro tikety viditelné žadateli dle jeho rozsahu."""
+        from django.db.models import Q
+        if self.requester_scope == self.REQUESTER_SCOPE_COMPANY and self.company_id:
+            return Q(company_id=self.company_id)
+        if self.requester_scope == self.REQUESTER_SCOPE_COMPANY_AREAS and self.company_id:
+            area_pks = list(self.requester_areas.values_list('pk', flat=True))
+            if area_pks:
+                return Q(company_id=self.company_id, area_id__in=area_pks) | Q(requester=self)
+        return Q(requester=self)
+
+    def can_see_ticket_as_requester(self, ticket):
+        """Ověří (Python), zda žadatel smí vidět daný tiket dle svého rozsahu."""
+        if self.requester_scope == self.REQUESTER_SCOPE_COMPANY and self.company_id:
+            return ticket.company_id == self.company_id
+        if self.requester_scope == self.REQUESTER_SCOPE_COMPANY_AREAS and self.company_id:
+            area_pks = set(self.requester_areas.values_list('pk', flat=True))
+            if area_pks:
+                return (ticket.company_id == self.company_id and ticket.area_id in area_pks) \
+                       or ticket.requester_id == self.pk
+        return ticket.requester_id == self.pk
 
     # ------------------------------------------------------------------ #
     # Omezení správce — viditelnost tiketů                                #
