@@ -62,16 +62,25 @@ _TICKET_TOKEN_RE = re.compile(r'\[#(\d+)#\]')
 def _extract_ticket_id(subject, body):
     """Extrahuje ID tiketu z tokenu [#42#] v předmětu nebo těle e-mailu.
 
-    Pokud je token v obou a ID se neshodují, vrátí None (podezřelý e-mail).
+    Vrátí ID (int), nebo None pokud token chybí nebo jsou ID neshodná.
+    Pro rozlišení mismatche od absence tokenu použij _has_token_mismatch().
     """
     m_subject = _TICKET_TOKEN_RE.search(subject)
     m_body = _TICKET_TOKEN_RE.search(body)
     id_subject = int(m_subject.group(1)) if m_subject else None
     id_body = int(m_body.group(1)) if m_body else None
     if id_subject is not None and id_body is not None and id_subject != id_body:
-        logger.warning('Token v předmětu (#%s) a těle (#%s) se neshodují — e-mail ignorován.', id_subject, id_body)
         return None
     return id_subject if id_subject is not None else id_body
+
+
+def _has_token_mismatch(subject, body):
+    """Vrátí True, pokud jsou tokeny v předmětu i těle přítomny, ale neshodují se."""
+    m_subject = _TICKET_TOKEN_RE.search(subject)
+    m_body = _TICKET_TOKEN_RE.search(body)
+    if m_subject is None or m_body is None:
+        return False
+    return int(m_subject.group(1)) != int(m_body.group(1))
 
 
 _QUOTE_HEADER_RE = re.compile(
@@ -124,20 +133,32 @@ def _can_add_email_comment(user, ticket):
     return False
 
 
-def _process_reply(ticket_id, raw_body, sender_user, attachments):
+def _process_reply(ticket_id, raw_body, sender_user, attachments, original_subject=''):
     """Zpracuje příchozí odpověď na notifikaci a přidá ji jako komentář k tiketu."""
     from apps.tickets.models import Ticket, Comment
     try:
         ticket = Ticket.objects.get(pk=ticket_id)
     except Ticket.DoesNotExist:
         logger.warning('Tiket #%s neexistuje — odpověď ignorována.', ticket_id)
+        _send_rejection_notice(
+            sender_user.email, original_subject,
+            f'Tiket #{ticket_id} nebyl nalezen.',
+        )
         return
     if not _can_add_email_comment(sender_user, ticket):
         logger.warning('Uživatel %s nemá oprávnění komentovat tiket #%s.', sender_user.email, ticket_id)
+        _send_rejection_notice(
+            sender_user.email, original_subject,
+            f'Nemáte oprávnění přidat komentář k tiketu #{ticket_id}.',
+        )
         return
     body = _strip_quoted_text(raw_body)
     if not body:
         logger.warning('Prázdné tělo odpovědi od %s k tiketu #%s — ignorováno.', sender_user.email, ticket_id)
+        _send_rejection_notice(
+            sender_user.email, original_subject,
+            'E-mail neobsahoval žádný text (obsahoval pouze citovanou zprávu).',
+        )
         return
     comment = Comment.objects.create(ticket=ticket, author=sender_user, body=body)
     logger.info('Vytvořen komentář #%s k tiketu #%s z e-mailu od %s.', comment.pk, ticket_id, sender_user.email)
@@ -170,6 +191,43 @@ def _is_rate_limited(from_email):
         return True
     cache.set(key, count + 1, timeout=3600)
     return False
+
+
+def _should_send_rate_limit_notice(from_email):
+    """Vrátí True (a zároveň příznak nastaví) pouze pro první zamítnutí v daném okně.
+
+    Zabraňuje opakovanému zasílání notifikací při překročení rate limitu.
+    """
+    from django.core.cache import cache
+    key = f'imap_rl_notif:{from_email.lower()}'
+    if cache.get(key):
+        return False
+    cache.set(key, 1, timeout=3600)
+    return True
+
+
+def _send_rejection_notice(to_email, original_subject, reason):
+    """Odešle odesílateli automatickou odpověď s důvodem zamítnutí e-mailu."""
+    from django.conf import settings
+    from django.core.mail import send_mail
+    subject = f'Re: {original_subject}' if original_subject else '[HCV Helpdesk] E-mail nebyl zpracován'
+    body = (
+        'Váš e-mail nebyl systémem HCV Helpdesk zpracován.\n\n'
+        f'Důvod: {reason}\n\n'
+        '---\n'
+        'Tato zpráva byla vygenerována automaticky. Neodpovídejte na ni.'
+    )
+    try:
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[to_email],
+            fail_silently=True,
+        )
+        logger.info('Zamítnutí odesláno na %s: %s', to_email, reason)
+    except Exception as exc:
+        logger.error('Chyba při odesílání zamítnutí na %s: %s', to_email, exc)
 
 
 def _get_attachments(msg):
@@ -289,6 +347,19 @@ def process_inbox():
                 continue
 
             body = _get_body(msg)
+
+            if _has_token_mismatch(subject, body):
+                logger.warning('Token mismatch v e-mailu od %s — ignorováno.', from_email)
+                user = _find_any_user_by_email(from_email)
+                if user is not None:
+                    _send_rejection_notice(
+                        from_email, subject,
+                        'E-mail obsahuje nekonzistentní identifikátor tiketu '
+                        '(číslo tiketu v předmětu a těle zprávy se neshoduje).',
+                    )
+                server.add_flags(uid, [imapclient.SEEN])
+                continue
+
             ticket_id = _extract_ticket_id(subject, body)
 
             if ticket_id is not None:
@@ -300,19 +371,40 @@ def process_inbox():
                     continue
                 if _is_rate_limited(from_email):
                     logger.warning('Rate limit překročen pro %s — odpověď ignorována.', from_email)
+                    if _should_send_rate_limit_notice(from_email):
+                        limit = getattr(settings, 'IMAP_RATE_LIMIT', 10)
+                        _send_rejection_notice(
+                            from_email, subject,
+                            f'Byl překročen hodinový limit pro odesílání e-mailů ({limit}/hod). '
+                            'Zkuste to prosím za hodinu.',
+                        )
                     server.add_flags(uid, [imapclient.SEEN])
                     continue
                 attachments = _get_attachments(msg)
-                _process_reply(ticket_id, body, user, attachments)
+                _process_reply(ticket_id, body, user, attachments, original_subject=subject)
             else:
                 # Nový e-mail bez tokenu → nový tiket
                 requester = _find_requester_by_email(from_email)
                 if requester is None:
-                    logger.warning('Neznámý odesílatel: %s — tiket nevytvořen.', from_email)
+                    logger.warning('Neznámý odesílatel nebo chybějící role Žadatel: %s — tiket nevytvořen.', from_email)
+                    user = _find_any_user_by_email(from_email)
+                    if user is not None:
+                        _send_rejection_notice(
+                            from_email, subject,
+                            'Nemáte oprávnění zakládat tikety prostřednictvím e-mailu. '
+                            'Tato funkce je dostupná pouze pro uživatele s rolí Žadatel.',
+                        )
                     server.add_flags(uid, [imapclient.SEEN])
                     continue
                 if _is_rate_limited(from_email):
                     logger.warning('Rate limit překročen pro %s — tiket nevytvořen.', from_email)
+                    if _should_send_rate_limit_notice(from_email):
+                        limit = getattr(settings, 'IMAP_RATE_LIMIT', 10)
+                        _send_rejection_notice(
+                            from_email, subject,
+                            f'Byl překročen hodinový limit pro odesílání e-mailů ({limit}/hod). '
+                            'Zkuste to prosím za hodinu.',
+                        )
                     server.add_flags(uid, [imapclient.SEEN])
                     continue
                 attachments = _get_attachments(msg)

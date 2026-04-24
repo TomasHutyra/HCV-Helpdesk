@@ -229,6 +229,23 @@ Ochrana proti zneužití:
 - Rate limiting — jeden žadatel může prostřednictvím e-mailu vytvořit
   nejvýše 10 tiketů za hodinu; další e-maily jsou v daném okně ignorovány.
 
+### Automatické zamítací odpovědi
+
+Pokud systém e-mail zamítne a odesílatel je rozpoznán jako registrovaný
+uživatel, odešle mu systém automatickou odpověď s důvodem zamítnutí.
+Neznámým odesílatelům se odpověď neposílá (ochrana před backscatter
+spamem).
+
+| Důvod zamítnutí | Komu se odpověď posílá |
+|---|---|
+| Uživatel nemá roli Žadatel (zakládání tiketu) | Registrovaný uživatel s jinou rolí |
+| Překročen rate limit | Registrovaný uživatel — pouze první zamítnutí v hodinovém okně; další jsou ignorována, aby nedošlo k zahlcení e-maily |
+| Tiket z tokenu neexistuje (odpověď) | Odesílatel odpovědi |
+| Nedostatečná oprávnění ke komentáři (odpověď) | Odesílatel odpovědi |
+| Prázdné tělo zprávy po odebrání citace (odpověď) | Odesílatel odpovědi |
+| Nekonzistentní token — jiné ID v předmětu a těle | Registrovaný uživatel |
+| Neznámý odesílatel | — (tiché ignorování) |
+
 ### Odpověď na notifikaci → komentář (reply-to-ticket)
 
 Každý odchozí notifikační e-mail obsahuje v předmětu i těle token ve
