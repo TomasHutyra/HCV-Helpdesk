@@ -1,6 +1,7 @@
 import os
 import uuid
 
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -145,6 +146,14 @@ class Ticket(models.Model):
 
     resolution_notes = models.TextField(_('způsob vyřešení'), blank=True)
     rejection_reason = models.TextField(_('důvod zamítnutí'), blank=True)
+
+    rating = models.IntegerField(
+        _('hodnocení'), null=True, blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+    )
+    rating_token = models.UUIDField(
+        _('token hodnocení'), default=uuid.uuid4, unique=True, editable=False,
+    )
 
     created_at = models.DateTimeField(_('vytvořeno'), auto_now_add=True)
     updated_at = models.DateTimeField(_('upraveno'), auto_now=True)

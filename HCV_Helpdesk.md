@@ -80,7 +80,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
   - Vidí své statistiky za období (měsíc) - kolik vyřešil požadavků,
     kolik jich má přiřazeno, jak dlouho trvá jeden požadavek, kolik času
     celkem strávil řešením požadavků, kolik má požadavků v jednotlivých
-    stavech
+    stavech, průměrné hodnocení spokojenosti žadatelů za měsíc
 
 - Obchodník
 
@@ -117,7 +117,8 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
   - Může změnit typ požadavku, prioritu, oblast a stav požadavku
 
-  - Vidí veškeré statistiky za období (měsíc) -- statistiky uživatelů,
+  - Vidí veškeré statistiky za období (měsíc) -- statistiky uživatelů
+    (včetně průměrného hodnocení spokojenosti každého řešitele),
     přehledy pro jednotlivé firmy (počet požadavků, počet otevřených
     požadavků, čas strávený na požadavcích) v rámci svého omezení
 
@@ -413,6 +414,7 @@ z formuláře editace oblasti.
 | Přidán komentář | Všichni přiřazení (žadatel, řešitel, obchodník) kromě autora komentáře | Název, text komentáře |
 | Požadavek vyřešen | Žadatel | Název, stav „Vyřešeno", způsob vyřešení |
 | Požadavek zamítnut | Žadatel | Název, stav „Zamítnuto", důvod zamítnutí |
+| Výzva k hodnocení po vyřešení | Žadatel (samostatný e-mail) | Klikatelné hvězdičky 0–5 s jednorázovými odkazy |
 
 ¹ **Výběr oprávněných správců** se řídí jejich omezeními oblastí a firem:
 
@@ -424,6 +426,28 @@ z formuláře editace oblasti.
   daných firem.
 - Správce s oběma omezeními musí požadavek splňovat zároveň jednu
   z oblastí i jednu z firem.
+
+### Hodnocení spokojenosti
+
+Po vyřešení tiketu obdrží žadatel samostatný e-mail s výzvou k hodnocení.
+E-mail obsahuje klikatelné hvězdičky (0–5), každá hvězdička je jednorázový
+odkaz — kliknutím se hodnocení okamžitě uloží bez nutnosti přihlášení.
+
+Pravidla hodnocení:
+
+- Hodnotit lze pouze tikety ve stavu „Vyřešeno" (nikoliv „Zamítnuto").
+- Každý tiket lze hodnotit právě jednou — odkaz je po použití neplatný.
+- Při znovuotevření tiketu se hodnocení resetuje; po novém vyřešení
+  přijde žadateli nová výzva.
+- Hodnotící e-mail je odesílán výhradně žadateli tiketu, bez ohledu
+  na případné další příjemce uzavíracích notifikací.
+- Odkaz je zabezpečen jednorázovým UUID tokenem; neplatný nebo již
+  použitý odkaz zobrazí srozumitelnou chybovou stránku.
+
+Hodnocení je viditelné v detailu tiketu (sidebar) a ve statistikách:
+
+- **Řešitel** vidí své průměrné hodnocení za zvolený měsíc.
+- **Správce** vidí průměrné hodnocení každého řešitele za zvolený měsíc.
 
 ## Přehled požadavků
 

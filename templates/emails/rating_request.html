@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:12px;overflow:hidden;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:28px 32px 20px;border-bottom:1px solid #e5e7eb;">
+              <p style="margin:0 0 6px 0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;">HCV Helpdesk</p>
+              <h1 style="margin:0;font-size:19px;font-weight:700;color:#111827;">Ohodnoťte naše řešení</h1>
+            </td>
+          </tr>
+
+          <!-- Ticket info -->
+          <tr>
+            <td style="padding:20px 32px 4px;">
+              <p style="margin:0 0 6px 0;font-size:14px;color:#6b7280;">Váš tiket byl vyřešen. Budeme rádi, pokud nás ohodnotíte.</p>
+              <p style="margin:0;font-size:14px;font-weight:600;color:#111827;">Tiket #{{ ticket.pk }}: {{ ticket.title }}</p>
+            </td>
+          </tr>
+
+          <!-- Rating row -->
+          <tr>
+            <td style="padding:24px 32px 28px;">
+              <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;">Klikněte na hvězdičky:</p>
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  {% for opt in rating_options %}
+                  <td style="padding:0 3px 0 0;">
+                    <a href="{{ opt.url }}" style="display:block;text-decoration:none;background:#fffbeb;border:2px solid #fcd34d;border-radius:9px;padding:10px 7px;text-align:center;min-width:56px;">
+                      <div style="font-size:17px;color:#f59e0b;letter-spacing:0;line-height:1;margin-bottom:5px;">{{ opt.stars }}</div>
+                      <div style="font-size:11px;font-weight:700;color:#92400e;">{{ opt.score }}/5</div>
+                    </a>
+                  </td>
+                  {% endfor %}
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:14px 32px;border-top:1px solid #e5e7eb;background:#f9fafb;">
+              <p style="margin:0;font-size:11px;color:#9ca3af;line-height:1.5;">Hodnocení lze zadat pouze jednou. Pokud jste tiket neotevírali vy, tento e-mail ignorujte.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

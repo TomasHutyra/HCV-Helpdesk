@@ -1,0 +1,57 @@
+{% load i18n static %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--c-bg-alt,#f5f6fa);padding:24px">
+  <div style="background:#fff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,.08);padding:40px 36px;max-width:440px;width:100%;text-align:center">
+
+    <img src="{% static 'images/logo.png' %}" alt="HCV" style="height:28px;width:auto;object-fit:contain;margin-bottom:20px;opacity:.85">
+
+    {% if state == 'saved' %}
+      <div style="font-size:40px;margin-bottom:16px">
+        {% for i in "12345" %}{% if forloop.counter <= score %}★{% else %}☆{% endif %}{% endfor %}
+      </div>
+      <h1 style="font-family:'Montserrat',sans-serif;font-size:18px;font-weight:800;color:#1a1d23;margin-bottom:8px">
+        Děkujeme za hodnocení!
+      </h1>
+      <p style="font-size:14px;color:#6b7280;margin-bottom:20px">
+        Tiket <strong>#{{ ticket.pk }}</strong> — {{ ticket.title }}<br>
+        Vaše hodnocení: <strong>{{ score }}/5</strong>
+      </p>
+      <p style="font-size:13px;color:#9ca3af">Toto hodnocení bylo zaznamenáno. Okno můžete zavřít.</p>
+
+    {% elif state == 'already_rated' %}
+      <div style="font-size:40px;margin-bottom:16px">
+        {% for i in "12345" %}{% if forloop.counter <= existing_score %}★{% else %}☆{% endif %}{% endfor %}
+      </div>
+      <h1 style="font-family:'Montserrat',sans-serif;font-size:18px;font-weight:800;color:#1a1d23;margin-bottom:8px">
+        Tiket byl již hodnocen
+      </h1>
+      <p style="font-size:14px;color:#6b7280;margin-bottom:4px">
+        Tiket <strong>#{{ ticket.pk }}</strong> — {{ ticket.title }}
+      </p>
+      <p style="font-size:14px;color:#6b7280">
+        Zaznamenané hodnocení: <strong>{{ existing_score }}/5</strong>
+      </p>
+
+    {% elif state == 'not_resolved' %}
+      <div style="font-size:36px;margin-bottom:16px">⚠️</div>
+      <h1 style="font-family:'Montserrat',sans-serif;font-size:18px;font-weight:800;color:#1a1d23;margin-bottom:8px">
+        Tiket není vyřešen
+      </h1>
+      <p style="font-size:14px;color:#6b7280">
+        Hodnotit lze pouze vyřešené tikety. Tiket <strong>#{{ ticket.pk }}</strong> má aktuálně jiný stav.
+      </p>
+
+    {% else %}
+      <div style="font-size:36px;margin-bottom:16px">🔗</div>
+      <h1 style="font-family:'Montserrat',sans-serif;font-size:18px;font-weight:800;color:#1a1d23;margin-bottom:8px">
+        Hodnocení není možné
+      </h1>
+      <p style="font-size:14px;color:#6b7280;margin-bottom:8px">
+        Tento odkaz je neplatný, nebo byl tiket již ohodnocen a hodnocení nelze změnit.
+      </p>
+      <p style="font-size:13px;color:#9ca3af">
+        Pokud si myslíte, že jde o chybu, kontaktujte prosím HCV Helpdesk.
+      </p>
+    {% endif %}
+
+  </div>
+</div>

@@ -4,8 +4,9 @@ Volány z Celery tasků (tasks.py).
 """
 import logging
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives, send_mail
 from django.template.loader import render_to_string
+from django.urls import reverse
 
 logger = logging.getLogger(__name__)
 
@@ -116,3 +117,34 @@ def send_ticket_closed(ticket, closed_as):
         recipients=[ticket.requester.email],
         ticket_id=ticket.pk,
     )
+    if closed_as == 'resolved':
+        send_rating_request(ticket)
+
+
+def send_rating_request(ticket):
+    """Výzva k hodnocení → výhradně žadateli (HTML e-mail s klikatelnými hvězdičkami)."""
+    site_url = settings.SITE_URL.rstrip('/')
+    rating_options = [
+        {
+            'score': score,
+            'url': site_url + reverse('tickets:rate', args=[ticket.pk, ticket.rating_token, score]),
+            'stars': '★' * score + '☆' * (5 - score),
+        }
+        for score in range(6)
+    ]
+    subject = _sanitize_subject(f'[HCV Helpdesk] Ohodnoťte řešení tiketu #{ticket.pk}: {ticket.title}')
+    context = {'ticket': ticket, 'rating_options': rating_options}
+    text_body = render_to_string('emails/rating_request.txt', context)
+    html_body = render_to_string('emails/rating_request.html', context)
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[ticket.requester.email],
+    )
+    msg.attach_alternative(html_body, 'text/html')
+    try:
+        msg.send()
+        logger.info('Rating request odeslán na: %s', ticket.requester.email)
+    except Exception as exc:
+        logger.error('Chyba při odesílání rating request "%s": %s', subject, exc)

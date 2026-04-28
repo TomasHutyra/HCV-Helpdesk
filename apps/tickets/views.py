@@ -1,5 +1,6 @@
 import io
 import os
+import uuid
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -653,9 +654,13 @@ class ReopenView(LoginRequiredMixin, View):
             ticket.reopen_to_offer_prep()
         else:
             ticket.reopen_to_in_progress()
+        ticket.rating = None
+        ticket.rating_token = uuid.uuid4()
         ticket.save()
         _log_change(ticket, request.user, TicketChange.FIELD_STATUS,
                     _status_label(old_status), _status_label(ticket.status))
+        from apps.notifications.tasks import notify_status_change
+        notify_status_change.delay(ticket.pk)
         messages.success(request, _('Tiket byl znovuotevřen.'))
         return redirect('tickets:detail', pk=pk)
 
@@ -840,6 +845,44 @@ class AddTimeLogView(LoginRequiredMixin, View):
                     'time_logs': ticket.time_logs.select_related('user').all(),
                 })
         return redirect('tickets:detail', pk=pk)
+
+
+# ------------------------------------------------------------------ #
+# Hodnocení tiketu (bez přihlášení, token z e-mailu)                  #
+# ------------------------------------------------------------------ #
+
+class RateTicketView(View):
+    """Žadatel hodnotí vyřešený tiket přes jednorázový odkaz z e-mailu."""
+
+    def get(self, request, pk, token, score):
+        ticket = get_object_or_404(Ticket, pk=pk)
+
+        if str(ticket.rating_token) != str(token) or not (0 <= score <= 5):
+            return render(request, 'tickets/rate_ticket.html', {'state': 'invalid'})
+
+        if ticket.status != Ticket.STATUS_RESOLVED:
+            return render(request, 'tickets/rate_ticket.html', {
+                'ticket': ticket,
+                'state': 'not_resolved',
+            })
+
+        if ticket.rating is not None:
+            return render(request, 'tickets/rate_ticket.html', {
+                'ticket': ticket,
+                'state': 'already_rated',
+                'existing_score': ticket.rating,
+            })
+
+        ticket.rating = score
+        # Zneplatnit token — odkaz z e-mailu lze použít pouze jednou
+        ticket.rating_token = uuid.uuid4()
+        ticket.save(update_fields=['rating', 'rating_token'])
+
+        return render(request, 'tickets/rate_ticket.html', {
+            'ticket': ticket,
+            'state': 'saved',
+            'score': score,
+        })
 
 
 # ------------------------------------------------------------------ #

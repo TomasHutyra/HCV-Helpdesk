@@ -30,6 +30,7 @@
           <th class="num">{% trans "Vyřešeno" %}</th>
           <th class="num">{% trans "Zamítnuto" %}</th>
           <th class="num">{% trans "Hodin" %}</th>
+          <th class="num">{% trans "Hodnocení" %}</th>
         </tr>
       </thead>
       <tbody>
@@ -42,9 +43,12 @@
           <td class="num" style="color:var(--c-green);font-weight:600">{{ s.resolved }}</td>
           <td class="num" style="color:var(--c-red)">{{ s.rejected }}</td>
           <td class="num" style="font-weight:700">{{ s.time_total }} h</td>
+          <td class="num" style="font-weight:700;color:var(--c-amber,#f59e0b)">
+            {% if s.avg_rating is not None %}{{ s.avg_rating }}/5{% else %}—{% endif %}
+          </td>
         </tr>
         {% empty %}
-        <tr><td colspan="7" style="padding:24px;text-align:center;color:var(--c-text-light)">{% trans "Žádní řešitelé." %}</td></tr>
+        <tr><td colspan="8" style="padding:24px;text-align:center;color:var(--c-text-light)">{% trans "Žádní řešitelé." %}</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -148,6 +152,12 @@
     <div class="stat-card stat-hours">
       <div class="stat-value">{{ s.time_total }}</div>
       <div class="stat-label">{% trans "Hodin" %}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--c-amber,#f59e0b)">
+        {% if s.avg_rating is not None %}{{ s.avg_rating }}/5{% else %}—{% endif %}
+      </div>
+      <div class="stat-label">{% trans "Hodnocení" %}</div>
     </div>
   </div>
   {% endwith %}

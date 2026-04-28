@@ -1,6 +1,6 @@
 from datetime import date
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Sum, Q
+from django.db.models import Avg, Count, Sum, Q
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.utils.translation import gettext as _
@@ -23,6 +23,9 @@ def _month_stats_resolver(user, year, month):
         created_at__month=month,
     ).aggregate(total=Sum('hours'))['total'] or 0
 
+    avg_rating_raw = tickets.filter(rating__isnull=False).aggregate(avg=Avg('rating'))['avg']
+    avg_rating = round(avg_rating_raw, 1) if avg_rating_raw is not None else None
+
     return {
         'user': user,
         'total': tickets.count(),
@@ -31,6 +34,7 @@ def _month_stats_resolver(user, year, month):
         'resolved': tickets.filter(status=Ticket.STATUS_RESOLVED).count(),
         'rejected': tickets.filter(status=Ticket.STATUS_REJECTED).count(),
         'time_total': float(time_total),
+        'avg_rating': avg_rating,
     }
 
 
