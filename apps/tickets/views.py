@@ -649,11 +649,28 @@ class ReopenView(LoginRequiredMixin, View):
             messages.error(request, _('Nedostatečná oprávnění.'))
             return redirect('tickets:detail', pk=pk)
         old_status = ticket.status
+
+        # Před resetem přepsat poznámky do komentáře
+        if ticket.resolution_notes:
+            Comment.objects.create(
+                ticket=ticket,
+                author=request.user,
+                body=f'{_("Způsob vyřešení")}:\n{ticket.resolution_notes}',
+            )
+        if ticket.rejection_reason:
+            Comment.objects.create(
+                ticket=ticket,
+                author=request.user,
+                body=f'{_("Důvod zamítnutí")}:\n{ticket.rejection_reason}',
+            )
+
         target = request.POST.get('target', 'in_progress')
         if target == 'offer_prep' and ticket.type == Ticket.TYPE_DEVELOPMENT:
             ticket.reopen_to_offer_prep()
         else:
             ticket.reopen_to_in_progress()
+        ticket.resolution_notes = ''
+        ticket.rejection_reason = ''
         ticket.rating = None
         ticket.rating_token = uuid.uuid4()
         ticket.save()

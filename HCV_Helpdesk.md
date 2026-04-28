@@ -352,7 +352,9 @@ Ve stavech „Řeší se" nebo „Příprava nabídky" je možné změnit řeši
 obchodníka bez změny stavu.
 
 Ve stavech „Vyřešeno" a „Zamítnuto" není možné dělat změny, pouze přesun
-do stavu „Řeší se" nebo „Příprava nabídky".
+do stavu „Řeší se" nebo „Příprava nabídky". Při znovuotevření se způsob
+vyřešení nebo důvod zamítnutí automaticky přepíše do komentáře (autorem
+komentáře je správce provádějící akci) a pole se vymažou.
 
 ### Přílohy
 
