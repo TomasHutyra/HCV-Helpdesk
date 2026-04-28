@@ -91,6 +91,12 @@
           <span style="font-size:12px;color:var(--c-text-muted);font-weight:600">{{ ticket.rating }}/5</span>
         </span>
       </div>
+      {% if ticket.rating_comment %}
+      <div class="meta-row" style="align-items:flex-start">
+        <span class="meta-label">{% trans "Komentář" %}</span>
+        <span class="meta-value" style="white-space:pre-wrap;font-size:13px;color:var(--c-text-muted)">{{ ticket.rating_comment }}</span>
+      </div>
+      {% endif %}
       {% endif %}
     </div>
 

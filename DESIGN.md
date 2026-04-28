@@ -143,7 +143,11 @@ Role jsou odděleny do modelu **`UserRole`** (M2M přes samostatnou tabulku), ab
 - Stav: FSM pole (`django-fsm`), platné přechody závisí na typu tiketu
 - Priority: `high` / `medium` / `low`
 - FK: `requester`, `resolver`, `sales`, `company`, `area`
-- `resolution_notes`, `rejection_reason` — vyplňují se při uzavření
+- `resolution_notes`, `rejection_reason` — vyplňují se při uzavření; při znovuotevření se zkopírují do komentáře a vymažou
+- `rating` — hodnocení spokojenosti žadatele (0–5, nullable); uloží se okamžitě při kliknutí na odkaz v e-mailu
+- `rating_comment` — volitelný textový komentář k hodnocení (max 2 000 znaků); odesílá se samostatně po kliknutí na hvězdičky; při znovuotevření se vymaže
+- `rating_token` — UUID token pro jednorázový hodnotící odkaz z e-mailu; po použití nebo znovuotevření se regeneruje
+- `rating_comment_token` — UUID token pro jednorázové přidání komentáře k hodnocení; generuje se při uložení hodnocení, po odeslání komentáře nebo znovuotevření tiketu se nastaví na `null`
 
 **Stavový automat** (`django-fsm`):
 ```
@@ -220,7 +224,7 @@ Uživatel → HTTP požadavek → Django view
 | `notify_assigned_to_resolver` | Přiřazení řešitele |
 | `notify_assigned_to_sales` | Přiřazení obchodníka |
 | `notify_new_comment` | Přidání komentáře |
-| `notify_ticket_closed` | Vyřešení nebo zamítnutí tiketu |
+| `notify_ticket_closed` | Vyřešení nebo zamítnutí tiketu; při vyřešení navíc synchronně odešle HTML e-mail s výzvou k hodnocení (0–5) přímo žadateli |
 
 ### Jak funguje automatická kontrola příchozích e-mailů
 
@@ -345,6 +349,7 @@ DJANGO_SETTINGS_MODULE=helpdesk.settings.production
 SECRET_KEY=<dlouhý náhodný řetězec>
 DEBUG=False
 ALLOWED_HOSTS=helpdesk.hcvdesk.eu
+SITE_URL=https://helpdesk.hcvdesk.eu
 DATABASE_URL=postgres://helpdesk:<heslo>@db:5432/hcv_helpdesk
 POSTGRES_PASSWORD=<heslo>
 CELERY_BROKER_URL=redis://redis:6379/0

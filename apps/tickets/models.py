@@ -154,6 +154,10 @@ class Ticket(models.Model):
     rating_token = models.UUIDField(
         _('token hodnocení'), default=uuid.uuid4, unique=True, editable=False,
     )
+    rating_comment = models.TextField(_('komentář k hodnocení'), blank=True)
+    rating_comment_token = models.UUIDField(
+        _('token komentáře k hodnocení'), null=True, blank=True, editable=False,
+    )
 
     created_at = models.DateTimeField(_('vytvořeno'), auto_now_add=True)
     updated_at = models.DateTimeField(_('upraveno'), auto_now=True)

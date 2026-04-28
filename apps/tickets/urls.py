@@ -27,4 +27,5 @@ urlpatterns = [
     path('<int:pk>/attachments/<int:att_pk>/delete/', views.DeleteAttachmentView.as_view(), name='delete_attachment'),
     path('<int:pk>/attachments/<int:att_pk>/download/', views.DownloadAttachmentView.as_view(), name='download_attachment'),
     path('<int:pk>/rate/<uuid:token>/<int:score>/', views.RateTicketView.as_view(), name='rate'),
+    path('<int:pk>/rate-comment/<uuid:comment_token>/', views.RateCommentView.as_view(), name='rate_comment'),
 ]

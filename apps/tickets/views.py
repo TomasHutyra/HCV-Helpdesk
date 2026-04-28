@@ -592,6 +592,9 @@ class ResolveView(LoginRequiredMixin, View):
         if not can_resolve:
             messages.error(request, _('Nedostatečná oprávnění.'))
             return redirect('tickets:detail', pk=pk)
+        if ticket.status != Ticket.STATUS_IN_PROGRESS:
+            messages.error(request, _('Tiket je již vyřešen.'))
+            return redirect('tickets:detail', pk=pk)
         form = ResolveForm(request.POST, instance=ticket)
         if form.is_valid():
             hours_str = request.POST.get('hours', '').strip()
@@ -626,6 +629,9 @@ class RejectView(LoginRequiredMixin, View):
         if not _manager_has_ticket_access(request.user, ticket):
             messages.error(request, _('Nedostatečná oprávnění.'))
             return redirect('tickets:detail', pk=pk)
+        if ticket.status == Ticket.STATUS_REJECTED:
+            messages.error(request, _('Tiket je již zamítnut.'))
+            return redirect('tickets:detail', pk=pk)
         old_status = ticket.status
         form = RejectForm(request.POST, instance=ticket)
         if form.is_valid():
@@ -647,6 +653,9 @@ class ReopenView(LoginRequiredMixin, View):
         ticket = get_object_or_404(Ticket, pk=pk)
         if not _manager_has_ticket_access(request.user, ticket):
             messages.error(request, _('Nedostatečná oprávnění.'))
+            return redirect('tickets:detail', pk=pk)
+        if ticket.status not in (Ticket.STATUS_RESOLVED, Ticket.STATUS_REJECTED):
+            messages.error(request, _('Tiket není uzavřen.'))
             return redirect('tickets:detail', pk=pk)
         old_status = ticket.status
 
@@ -672,7 +681,9 @@ class ReopenView(LoginRequiredMixin, View):
         ticket.resolution_notes = ''
         ticket.rejection_reason = ''
         ticket.rating = None
+        ticket.rating_comment = ''
         ticket.rating_token = uuid.uuid4()
+        ticket.rating_comment_token = None
         ticket.save()
         _log_change(ticket, request.user, TicketChange.FIELD_STATUS,
                     _status_label(old_status), _status_label(ticket.status))
@@ -876,29 +887,43 @@ class RateTicketView(View):
 
         if str(ticket.rating_token) != str(token) or not (0 <= score <= 5):
             return render(request, 'tickets/rate_ticket.html', {'state': 'invalid'})
-
         if ticket.status != Ticket.STATUS_RESOLVED:
-            return render(request, 'tickets/rate_ticket.html', {
-                'ticket': ticket,
-                'state': 'not_resolved',
-            })
-
+            return render(request, 'tickets/rate_ticket.html', {'ticket': ticket, 'state': 'not_resolved'})
         if ticket.rating is not None:
             return render(request, 'tickets/rate_ticket.html', {
-                'ticket': ticket,
-                'state': 'already_rated',
+                'ticket': ticket, 'state': 'already_rated',
                 'existing_score': ticket.rating,
+                'existing_comment': ticket.rating_comment,
             })
 
+        comment_token = uuid.uuid4()
         ticket.rating = score
-        # Zneplatnit token — odkaz z e-mailu lze použít pouze jednou
-        ticket.rating_token = uuid.uuid4()
-        ticket.save(update_fields=['rating', 'rating_token'])
+        ticket.rating_token = uuid.uuid4()       # zneplatnit odkaz z e-mailu
+        ticket.rating_comment_token = comment_token
+        ticket.save(update_fields=['rating', 'rating_token', 'rating_comment_token'])
 
         return render(request, 'tickets/rate_ticket.html', {
-            'ticket': ticket,
-            'state': 'saved',
-            'score': score,
+            'ticket': ticket, 'state': 'confirm', 'score': score,
+            'comment_token': comment_token,
+        })
+
+
+class RateCommentView(View):
+    """Žadatel přidá volitelný komentář k hodnocení tiketu."""
+
+    def post(self, request, pk, comment_token):
+        ticket = get_object_or_404(Ticket, pk=pk)
+
+        if ticket.rating_comment_token is None or str(ticket.rating_comment_token) != str(comment_token):
+            return render(request, 'tickets/rate_ticket.html', {'state': 'invalid'})
+
+        ticket.rating_comment = request.POST.get('comment', '').strip()
+        ticket.rating_comment_token = None      # zneplatnit — komentář lze přidat pouze jednou
+        ticket.save(update_fields=['rating_comment', 'rating_comment_token'])
+
+        return render(request, 'tickets/rate_ticket.html', {
+            'ticket': ticket, 'state': 'saved', 'score': ticket.rating,
+            'comment': ticket.rating_comment,
         })
 
 

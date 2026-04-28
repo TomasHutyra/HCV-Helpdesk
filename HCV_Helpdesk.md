@@ -434,19 +434,25 @@ z formuláře editace oblasti.
 Po vyřešení tiketu obdrží žadatel samostatný e-mail s výzvou k hodnocení.
 E-mail obsahuje klikatelné hvězdičky (0–5), každá hvězdička je jednorázový
 odkaz — kliknutím se hodnocení okamžitě uloží bez nutnosti přihlášení.
+Po kliknutí se zobrazí stránka s potvrzením hodnocení a volitelným polem
+pro textový komentář (nepovinný, max. 2 000 znaků). Komentář se odesílá
+samostatným tlačítkem a je zabezpečen vlastním jednorázovým tokenem.
+Pokud žadatel stránku zavře bez odeslání komentáře, hodnocení zůstane uloženo.
 
 Pravidla hodnocení:
 
 - Hodnotit lze pouze tikety ve stavu „Vyřešeno" (nikoliv „Zamítnuto").
 - Každý tiket lze hodnotit právě jednou — odkaz je po použití neplatný.
-- Při znovuotevření tiketu se hodnocení resetuje; po novém vyřešení
+- Komentář k hodnocení lze přidat právě jednou (druhý token je po odeslání zneplatněn).
+- Při znovuotevření tiketu se hodnocení i komentář resetují; po novém vyřešení
   přijde žadateli nová výzva.
 - Hodnotící e-mail je odesílán výhradně žadateli tiketu, bez ohledu
   na případné další příjemce uzavíracích notifikací.
 - Odkaz je zabezpečen jednorázovým UUID tokenem; neplatný nebo již
   použitý odkaz zobrazí srozumitelnou chybovou stránku.
 
-Hodnocení je viditelné v detailu tiketu (sidebar) a ve statistikách:
+Hodnocení a komentář jsou viditelné v detailu tiketu (sidebar) a hodnocení
+ve statistikách:
 
 - **Řešitel** vidí své průměrné hodnocení za zvolený měsíc.
 - **Správce** vidí průměrné hodnocení každého řešitele za zvolený měsíc.

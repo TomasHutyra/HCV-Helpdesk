@@ -4,21 +4,49 @@
 
     <img src="{% static 'images/logo.png' %}" alt="HCV" style="height:28px;width:auto;object-fit:contain;margin-bottom:20px;opacity:.85">
 
-    {% if state == 'saved' %}
-      <div style="font-size:40px;margin-bottom:16px">
+    {% if state == 'confirm' %}
+      <div style="font-size:40px;margin-bottom:16px;color:#f59e0b">
+        {% for i in "12345" %}{% if forloop.counter <= score %}★{% else %}☆{% endif %}{% endfor %}
+      </div>
+      <h1 style="font-family:'Montserrat',sans-serif;font-size:18px;font-weight:800;color:#1a1d23;margin-bottom:6px">
+        Děkujeme za hodnocení!
+      </h1>
+      <p style="font-size:14px;color:#6b7280;margin-bottom:20px">
+        Tiket <strong>#{{ ticket.pk }}</strong> — {{ ticket.title }}<br>
+        Vaše hodnocení (<strong>{{ score }}/5</strong>) bylo zaznamenáno.
+      </p>
+      <form method="post" action="{% url 'tickets:rate_comment' ticket.pk comment_token %}" style="text-align:left">
+        {% csrf_token %}
+        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">
+          Chcete přidat komentář? <span style="font-weight:400;color:#9ca3af">(nepovinný)</span>
+        </label>
+        <textarea name="comment" rows="4" maxlength="2000" placeholder="Co se povedlo, co by šlo zlepšit…"
+          style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#1a1d23;resize:vertical;font-family:inherit;outline:none"
+          onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#d1d5db'"></textarea>
+        <button type="submit"
+          style="margin-top:14px;width:100%;padding:10px;background:#6366f1;color:#fff;font-size:14px;font-weight:700;border:none;border-radius:8px;cursor:pointer;font-family:'Montserrat',sans-serif">
+          Odeslat komentář
+        </button>
+      </form>
+
+    {% elif state == 'saved' %}
+      <div style="font-size:40px;margin-bottom:16px;color:#f59e0b">
         {% for i in "12345" %}{% if forloop.counter <= score %}★{% else %}☆{% endif %}{% endfor %}
       </div>
       <h1 style="font-family:'Montserrat',sans-serif;font-size:18px;font-weight:800;color:#1a1d23;margin-bottom:8px">
         Děkujeme za hodnocení!
       </h1>
-      <p style="font-size:14px;color:#6b7280;margin-bottom:20px">
+      <p style="font-size:14px;color:#6b7280;margin-bottom:{% if comment %}12px{% else %}20px{% endif %}">
         Tiket <strong>#{{ ticket.pk }}</strong> — {{ ticket.title }}<br>
         Vaše hodnocení: <strong>{{ score }}/5</strong>
       </p>
+      {% if comment %}
+        <p style="font-size:13px;color:#6b7280;background:#f9fafb;border-radius:8px;padding:10px 12px;margin-bottom:16px;text-align:left;white-space:pre-wrap">{{ comment }}</p>
+      {% endif %}
       <p style="font-size:13px;color:#9ca3af">Toto hodnocení bylo zaznamenáno. Okno můžete zavřít.</p>
 
     {% elif state == 'already_rated' %}
-      <div style="font-size:40px;margin-bottom:16px">
+      <div style="font-size:40px;margin-bottom:16px;color:#f59e0b">
         {% for i in "12345" %}{% if forloop.counter <= existing_score %}★{% else %}☆{% endif %}{% endfor %}
       </div>
       <h1 style="font-family:'Montserrat',sans-serif;font-size:18px;font-weight:800;color:#1a1d23;margin-bottom:8px">
@@ -27,12 +55,15 @@
       <p style="font-size:14px;color:#6b7280;margin-bottom:4px">
         Tiket <strong>#{{ ticket.pk }}</strong> — {{ ticket.title }}
       </p>
-      <p style="font-size:14px;color:#6b7280">
+      <p style="font-size:14px;color:#6b7280;margin-bottom:{% if existing_comment %}12px{% else %}0{% endif %}">
         Zaznamenané hodnocení: <strong>{{ existing_score }}/5</strong>
       </p>
+      {% if existing_comment %}
+        <p style="font-size:13px;color:#6b7280;background:#f9fafb;border-radius:8px;padding:10px 12px;text-align:left;white-space:pre-wrap">{{ existing_comment }}</p>
+      {% endif %}
 
     {% elif state == 'not_resolved' %}
-      <div style="font-size:36px;margin-bottom:16px">⚠️</div>
+      <div style="font-size:36px;margin-bottom:16px">&#9888;&#65039;</div>
       <h1 style="font-family:'Montserrat',sans-serif;font-size:18px;font-weight:800;color:#1a1d23;margin-bottom:8px">
         Tiket není vyřešen
       </h1>
@@ -41,7 +72,7 @@
       </p>
 
     {% else %}
-      <div style="font-size:36px;margin-bottom:16px">🔗</div>
+      <div style="font-size:36px;margin-bottom:16px">&#128279;</div>
       <h1 style="font-family:'Montserrat',sans-serif;font-size:18px;font-weight:800;color:#1a1d23;margin-bottom:8px">
         Hodnocení není možné
       </h1>
