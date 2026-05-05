@@ -465,6 +465,16 @@ Přehled obsahuje sloupce: #, Název, Typ, Stav, Priorita, Firma, Vytvořeno.
 Správce navíc vidí sloupec Řešitel. Řešitel, obchodník a správce vidí
 sloupec Hodiny (součet všech zaznamenaných hodin k danému požadavku).
 
+### Řazení
+
+Tabulku tiketů lze řadit kliknutím na záhlaví sloupce. Aktivní sloupec
+je zvýrazněn šipkou (↑ vzestupně, ↓ sestupně). Druhé kliknutí na
+tentýž sloupec obrátí směr řazení. Výchozí řazení je podle data
+vytvoření sestupně. Řazení je zachováno při filtrování i stránkování.
+
+Řaditelné sloupce: #, Název, Typ, Stav, Priorita, Oblast, Firma,
+Řešitel, Vytvořeno.
+
 ### Filtry
 
 Všichni uživatelé mohou filtrovat podle: Stav, Typ, Oblast, Priorita,

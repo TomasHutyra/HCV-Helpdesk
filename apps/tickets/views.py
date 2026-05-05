@@ -8,6 +8,7 @@ from django.db import models as db_models
 from django.http import Http404, HttpResponse, FileResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.db.models.functions import Lower
 from django.utils.translation import gettext as _
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
@@ -143,6 +144,68 @@ def _manager_has_ticket_access(user, ticket):
     return False
 
 
+_SORT_FIELDS = {
+    'pk':         'pk',
+    'title':      'title',
+    'type':       'type',
+    'status':     'status',
+    'priority':   'priority',
+    'area':       'area__name',
+    'company':    'company__name',
+    'resolver':   'resolver__last_name',
+    'hours':      'hours_sum',
+    'created_at': 'created_at',
+}
+
+
+def _apply_ticket_sort(qs, get_params, show_hours=False):
+    sort_key = get_params.get('sort', 'created_at')
+    desc = get_params.get('dir', 'desc') == 'desc'
+
+    if sort_key == 'hours' and not show_hours:
+        sort_key = 'created_at'
+
+    if sort_key == 'title':
+        expr = Lower('title')
+        return qs.order_by(expr.desc() if desc else expr)
+
+    if sort_key == 'status':
+        expr = db_models.Case(
+            db_models.When(status=Ticket.STATUS_NEW,         then=db_models.Value(1)),
+            db_models.When(status=Ticket.STATUS_OFFER,       then=db_models.Value(2)),
+            db_models.When(status=Ticket.STATUS_IN_PROGRESS, then=db_models.Value(3)),
+            db_models.When(status=Ticket.STATUS_RESOLVED,    then=db_models.Value(4)),
+            db_models.When(status=Ticket.STATUS_REJECTED,    then=db_models.Value(5)),
+            default=db_models.Value(9),
+            output_field=db_models.IntegerField(),
+        )
+        return qs.annotate(_status_ord=expr).order_by('-_status_ord' if desc else '_status_ord')
+
+    if sort_key == 'priority':
+        expr = db_models.Case(
+            db_models.When(priority=Ticket.PRIORITY_HIGH,   then=db_models.Value(1)),
+            db_models.When(priority=Ticket.PRIORITY_MEDIUM, then=db_models.Value(2)),
+            db_models.When(priority=Ticket.PRIORITY_LOW,    then=db_models.Value(3)),
+            default=db_models.Value(9),
+            output_field=db_models.IntegerField(),
+        )
+        return qs.annotate(_priority_ord=expr).order_by('-_priority_ord' if desc else '_priority_ord')
+
+    if sort_key == 'type':
+        expr = db_models.Case(
+            db_models.When(type=Ticket.TYPE_PROBLEM,     then=db_models.Value(1)),
+            db_models.When(type=Ticket.TYPE_DEVELOPMENT, then=db_models.Value(2)),
+            db_models.When(type=Ticket.TYPE_IMPROVEMENT, then=db_models.Value(3)),
+            default=db_models.Value(9),
+            output_field=db_models.IntegerField(),
+        )
+        return qs.annotate(_type_ord=expr).order_by('-_type_ord' if desc else '_type_ord')
+
+    field = _SORT_FIELDS.get(sort_key, 'created_at')
+    prefix = '-' if desc else ''
+    return qs.order_by(f'{prefix}{field}')
+
+
 def _apply_ticket_filters(qs, get_params, user):
     """Aplikuje filtry z GET parametrů na queryset tiketů."""
     form = TicketFilterForm(get_params, user=user)
@@ -202,17 +265,27 @@ class TicketListView(LoginRequiredMixin, ListView):
 
         qs = _apply_ticket_filters(qs, self.request.GET, user)
 
-        if user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN):
+        show_hours = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
+        if show_hours:
             qs = qs.annotate(hours_sum=db_models.Sum('time_logs__hours'))
 
-        return qs.order_by('-created_at')
+        return _apply_ticket_sort(qs, self.request.GET, show_hours)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['filter_form'] = TicketFilterForm(self.request.GET, user=self.request.user)
-        ctx['show_hours'] = self.request.user.has_role(
+        user = self.request.user
+        ctx['filter_form'] = TicketFilterForm(self.request.GET, user=user)
+        ctx['show_hours'] = user.has_role(
             UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN
         )
+        ctx['current_sort'] = self.request.GET.get('sort', 'created_at')
+        ctx['current_dir'] = self.request.GET.get('dir', 'desc')
+        # GET params bez sort/dir/page — pro sestavení sort odkazů v šabloně
+        params = self.request.GET.copy()
+        params.pop('sort', None)
+        params.pop('dir', None)
+        params.pop('page', None)
+        ctx['filter_params'] = params.urlencode()
         return ctx
 
 
@@ -250,7 +323,7 @@ class TicketExportView(LoginRequiredMixin, View):
         if show_hours:
             qs = qs.annotate(hours_sum=db_models.Sum('time_logs__hours'))
 
-        qs = qs.order_by('-created_at')
+        qs = _apply_ticket_sort(qs, request.GET, show_hours)
 
         wb = openpyxl.Workbook()
         ws = wb.active

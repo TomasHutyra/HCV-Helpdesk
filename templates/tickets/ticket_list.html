@@ -35,6 +35,10 @@
 
 {# Filter bar #}
 <form method="get" class="filter-bar">
+  {% if current_sort != 'created_at' or current_dir != 'desc' %}
+  <input type="hidden" name="sort" value="{{ current_sort }}">
+  <input type="hidden" name="dir" value="{{ current_dir }}">
+  {% endif %}
   {% for field in filter_form %}
   {% if field.html_name != 'date_from' and field.html_name != 'date_to' %}
   <div class="filter-field">
@@ -76,6 +80,11 @@
   function updateExportHref() {
     var base = btn.href.split('?')[0];
     var params = new URLSearchParams(new FormData(form));
+    var current = new URLSearchParams(window.location.search);
+    ['sort', 'dir'].forEach(function(k) {
+      if (current.has(k)) params.set(k, current.get(k));
+      else params.delete(k);
+    });
     btn.href = base + (params.toString() ? '?' + params.toString() : '');
   }
   updateExportHref();
@@ -89,16 +98,18 @@
     <table class="ticket-table">
       <thead>
         <tr>
-          <th>#</th>
-          <th>{% trans "Název" %}</th>
-          <th>{% trans "Typ" %}</th>
-          <th>{% trans "Stav" %}</th>
-          <th>{% trans "Priorita" %}</th>
-          <th>{% trans "Oblast" %}</th>
-          <th>{% trans "Firma" %}</th>
-          <th>{% trans "Řešitel" %}</th>
-          {% if show_hours %}<th style="text-align:right">{% trans "Hodiny" %}</th>{% endif %}
-          <th>{% trans "Vytvořeno" %}</th>
+          {% with s=current_sort d=current_dir p=filter_params %}
+          {% include 'tickets/partials/sort_th.html' with key="pk"         label="#"                        s=s d=d p=p %}
+          {% include 'tickets/partials/sort_th.html' with key="title"      label=_("Název")                 s=s d=d p=p %}
+          {% include 'tickets/partials/sort_th.html' with key="type"       label=_("Typ")                   s=s d=d p=p %}
+          {% include 'tickets/partials/sort_th.html' with key="status"     label=_("Stav")                  s=s d=d p=p %}
+          {% include 'tickets/partials/sort_th.html' with key="priority"   label=_("Priorita")              s=s d=d p=p %}
+          {% include 'tickets/partials/sort_th.html' with key="area"       label=_("Oblast")                s=s d=d p=p %}
+          {% include 'tickets/partials/sort_th.html' with key="company"    label=_("Firma")                 s=s d=d p=p %}
+          {% include 'tickets/partials/sort_th.html' with key="resolver"   label=_("Řešitel")               s=s d=d p=p %}
+          {% if show_hours %}{% include 'tickets/partials/sort_th.html' with key="hours" label=_("Hodiny") s=s d=d p=p right=True %}{% endif %}
+          {% include 'tickets/partials/sort_th.html' with key="created_at" label=_("Vytvořeno")             s=s d=d p=p %}
+          {% endwith %}
         </tr>
       </thead>
       <tbody>

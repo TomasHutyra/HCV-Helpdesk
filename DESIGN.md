@@ -174,6 +174,21 @@ Uzamčené stavy (`Vyřešeno`, `Zamítnuto`) povolují pouze přechod zpět na 
 
 ## Aplikační vrstvy
 
+### Řazení tabulky tiketů
+
+Kliknutím na záhlaví sloupce se do URL přidají parametry `sort` (klíč
+sloupce) a `dir` (`asc` / `desc`). `TicketListView.get_queryset`
+mapuje klíč na ORM pole (`_SORT_FIELDS`) a aplikuje `order_by`.
+Výchozí řazení: `sort=created_at&dir=desc`.
+
+`get_context_data` předává do šablony `current_sort`, `current_dir` a
+`filter_params` (ostatní GET params bez `sort`/`dir`/`page` —
+zachovává filtry při změně řazení a resetuje stránku na 1).
+
+Každé záhlaví tabulky je renderováno přes partial
+`tickets/partials/sort_th.html`, který sestaví odkaz pro přepnutí
+směru a přidá šipku na aktivním sloupci.
+
 ### Views (`apps/tickets/views.py`, `apps/accounts/views.py`)
 
 Používají Django class-based views (`ListView`, `DetailView`, `CreateView`, `UpdateView`) a prosté `View` pro HTMX akce.
