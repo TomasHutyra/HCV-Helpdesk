@@ -128,7 +128,14 @@ class NTLMEmailBackend(EmailBackend):
         ctx = NtlmContext(self.username, self.password, '', '', ntlm_compatibility=3)
 
         negotiate = ctx.step()
-        code, resp = self.connection.docmd('AUTH', 'NTLM ' + base64.b64encode(negotiate).decode())
+
+        # Some Exchange servers reject inline negotiate — try two-step first
+        code, resp = self.connection.docmd('AUTH', 'NTLM')
+        if code == 334:
+            code, resp = self.connection.docmd(base64.b64encode(negotiate).decode())
+        else:
+            code, resp = self.connection.docmd('AUTH', 'NTLM ' + base64.b64encode(negotiate).decode())
+
         if code != 334:
             raise smtplib.SMTPAuthenticationError(code, resp)
 
