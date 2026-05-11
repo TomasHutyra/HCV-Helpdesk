@@ -125,7 +125,7 @@ class NTLMEmailBackend(EmailBackend):
 
     def _ntlm_login(self):
         from ntlm_auth.ntlm import NtlmContext
-        ctx = NtlmContext(self.username, self.password, None, None, ntlm_compatibility=3)
+        ctx = NtlmContext(self.username, self.password, '', '', ntlm_compatibility=3)
 
         negotiate = ctx.step()
         code, resp = self.connection.docmd('AUTH', 'NTLM ' + base64.b64encode(negotiate).decode())
