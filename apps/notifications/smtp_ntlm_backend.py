@@ -23,7 +23,7 @@ class NTLMEmailBackend(EmailBackend):
             self.connection = self.connection_class(self.host, self.port, **connection_params)
             if not self.use_ssl and self.use_tls:
                 self.connection.ehlo()
-                self.connection.starttls(keyfile=self.ssl_keyfile, certfile=self.ssl_certfile)
+                self.connection.starttls()
                 self.connection.ehlo()
             if self.username and self.password:
                 self._ntlm_login()
