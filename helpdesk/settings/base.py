@@ -9,6 +9,7 @@ env = environ.Env(
     EMAIL_USE_TLS=(bool, True),
     IMAP_PORT=(int, 993),
     IMAP_USE_SSL=(bool, True),
+    IMAP_USE_STARTTLS=(bool, False),
 )
 
 # Načíst .env soubor pokud existuje
@@ -124,6 +125,7 @@ IMAP_PORT = env('IMAP_PORT')
 IMAP_USER = env('IMAP_USER', default='')
 IMAP_PASSWORD = env('IMAP_PASSWORD', default='')
 IMAP_USE_SSL = env('IMAP_USE_SSL')
+IMAP_USE_STARTTLS = env('IMAP_USE_STARTTLS')
 IMAP_FOLDER = env('IMAP_FOLDER', default='INBOX')
 
 # Cache — výchozí locmem (production přepíše na Redis)

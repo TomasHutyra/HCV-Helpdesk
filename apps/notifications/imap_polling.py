@@ -313,13 +313,15 @@ def process_inbox():
 
     try:
         import imapclient
-        ssl = settings.IMAP_USE_SSL
+        starttls = getattr(settings, 'IMAP_USE_STARTTLS', False)
         server = imapclient.IMAPClient(
             host=host,
             port=settings.IMAP_PORT,
-            ssl=ssl,
+            ssl=settings.IMAP_USE_SSL and not starttls,
             use_uid=True,
         )
+        if starttls:
+            server.starttls()
         server.login(settings.IMAP_USER, settings.IMAP_PASSWORD)
         server.select_folder(settings.IMAP_FOLDER)
 
