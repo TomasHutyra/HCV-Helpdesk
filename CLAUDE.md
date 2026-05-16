@@ -30,6 +30,18 @@ python manage.py test
 docker compose up --build -d
 docker compose logs -f
 docker compose exec web python manage.py createsuperuser
+
+# Správa dat — management commands
+# Zobrazit superuživatele
+docker compose exec web python manage.py shell -c "from apps.accounts.models import User; [print(u.username, u.email) for u in User.objects.filter(is_superuser=True)]"
+
+# Smazat testovací data (tikety, uživatele kromě superuživatelů, firmy) — dry-run / --confirm
+docker compose exec web python manage.py clear_test_data
+docker compose exec web python manage.py clear_test_data --confirm
+
+# Vytvořit počáteční uživatele — dry-run / --confirm
+docker compose exec web python manage.py create_initial_users
+docker compose exec web python manage.py create_initial_users --confirm
 ```
 
 `DJANGO_SETTINGS_MODULE` se přepíná v `.env`:
