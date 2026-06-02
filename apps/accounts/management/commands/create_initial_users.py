@@ -246,8 +246,18 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         confirm = options['confirm']
 
-        self.stdout.write('\n=== Uživatelé k vytvoření ===')
-        for u in USERS:
+        existing_emails = set(User.objects.filter(
+            email__in=[u['email'] for u in USERS]
+        ).values_list('email', flat=True))
+
+        new_users = [u for u in USERS if u['email'] not in existing_emails]
+
+        if not new_users:
+            self.stdout.write(self.style.WARNING('\nVšichni uživatelé již existují, nic k vytvoření.\n'))
+            return
+
+        self.stdout.write(f'\n=== Uživatelé k vytvoření ({len(new_users)}) ===')
+        for u in new_users:
             roles_str = ', '.join(u['roles'])
             areas_str = ', '.join(u['areas']) if u['areas'] else '—'
             self.stdout.write(
