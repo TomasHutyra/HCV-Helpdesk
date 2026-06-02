@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}Platnost relace vypršela – HCV Helpdesk{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:center;min-height:60vh;padding:2rem">
+  <div style="max-width:420px;width:100%;text-align:center">
+
+    <div style="width:64px;height:64px;border-radius:16px;background:var(--color-warning-bg,#fef3c7);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:2rem">
+      ⚠️
+    </div>
+
+    <h1 style="font-family:'Montserrat',sans-serif;font-size:1.4rem;font-weight:700;color:var(--color-text-primary,#111827);margin-bottom:.75rem">
+      Platnost relace vypršela
+    </h1>
+
+    <p style="color:var(--color-text-muted,#6b7280);font-size:.95rem;line-height:1.6;margin-bottom:2rem">
+      Formulář byl odeslán s neplatným bezpečnostním tokenem. Obvykle se stane při přihlášení
+      z více záložek nebo oken najednou. Zkuste se odhlásit znovu — stránka je nyní aktuální.
+    </p>
+
+    <form method="post" action="{% url 'accounts:logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:.75rem">
+        Odhlásit se
+      </button>
+    </form>
+
+    <a href="{% url 'tickets:list' %}" class="btn btn-ghost" style="width:100%;justify-content:center">
+      Zpět na přehled tiketů
+    </a>
+
+  </div>
+</div>
+{% endblock %}
