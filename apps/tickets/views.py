@@ -62,15 +62,13 @@ def _can_comment(user, ticket):
     if user.has_role(UserRole.MANAGER):
         return user.can_see_ticket_as_manager(ticket)
     if is_closed:
-        # Na uzavřeném tiketu může komentovat pouze ten, kdo tiket založil
-        # A zároveň má roli REQUESTER (pokrývá i případ resolver+requester).
         return user.has_role(UserRole.REQUESTER) and ticket.requester == user
-    if user.has_role(UserRole.RESOLVER):
-        return ticket.resolver == user
-    if user.has_role(UserRole.SALES):
-        return ticket.sales == user
-    if user.has_role(UserRole.REQUESTER):
-        return ticket.requester == user
+    if user.has_role(UserRole.RESOLVER) and ticket.resolver == user:
+        return True
+    if user.has_role(UserRole.SALES) and ticket.sales == user:
+        return True
+    if user.has_role(UserRole.REQUESTER) and ticket.requester == user:
+        return True
     return False
 
 
@@ -80,13 +78,37 @@ def _can_add_attachment(user, ticket):
         return True
     if user.has_role(UserRole.MANAGER):
         return user.can_see_ticket_as_manager(ticket)
-    if user.has_role(UserRole.RESOLVER):
-        return ticket.resolver == user
-    if user.has_role(UserRole.SALES):
-        return ticket.sales == user
-    if user.has_role(UserRole.REQUESTER):
-        return ticket.requester == user
+    if user.has_role(UserRole.RESOLVER) and ticket.resolver == user:
+        return True
+    if user.has_role(UserRole.SALES) and ticket.sales == user:
+        return True
+    if user.has_role(UserRole.REQUESTER) and ticket.requester == user:
+        return True
     return False
+
+
+def _build_user_ticket_q(user):
+    """Vrátí Q výraz pro tikety viditelné uživateli dle všech jeho rolí (multi-role safe).
+
+    Správce a admin se řeší zvlášť ve volajícím kódu.
+    Vrátí None pokud uživatel nemá žádnou relevantní roli (→ qs.none()).
+    """
+    parts = []
+    if user.has_role(UserRole.RESOLVER):
+        area_q = user.get_resolver_new_tickets_q()
+        new_q = (db_models.Q(status=Ticket.STATUS_NEW) if area_q is None
+                 else db_models.Q(status=Ticket.STATUS_NEW) & area_q)
+        parts.append(db_models.Q(resolver=user) | new_q)
+    if user.has_role(UserRole.SALES):
+        parts.append(db_models.Q(sales=user))
+    if user.has_role(UserRole.REQUESTER):
+        parts.append(user.get_requester_ticket_q())
+    if not parts:
+        return None
+    result = parts[0]
+    for p in parts[1:]:
+        result |= p
+    return result
 
 
 def _can_delete_attachment(user, attachment):
@@ -102,21 +124,16 @@ def _get_adjacent_tickets(user, ticket):
     """Vrátí (prev_pk, next_pk) — sousední tikety ve stejném pořadí jako seznam (dle PK)."""
     qs = Ticket.objects.all()
     if user.has_role(UserRole.ADMIN):
-        pass  # Admin vidí vše
+        pass
     elif user.has_role(UserRole.MANAGER):
         q = user.get_ticket_visibility_q()
         if q is not None:
             qs = qs.filter(q)
-    elif user.has_role(UserRole.RESOLVER):
-        area_q = user.get_resolver_new_tickets_q()
-        new_q = db_models.Q(status=Ticket.STATUS_NEW) if area_q is None else db_models.Q(status=Ticket.STATUS_NEW) & area_q
-        qs = qs.filter(db_models.Q(resolver=user) | new_q)
-    elif user.has_role(UserRole.SALES):
-        qs = qs.filter(sales=user)
-    elif user.has_role(UserRole.REQUESTER):
-        qs = qs.filter(user.get_requester_ticket_q())
     else:
-        return None, None
+        q = _build_user_ticket_q(user)
+        if q is None:
+            return None, None
+        qs = qs.filter(q)
     prev_pk = qs.filter(pk__lt=ticket.pk).order_by('-pk').values_list('pk', flat=True).first()
     next_pk = qs.filter(pk__gt=ticket.pk).order_by('pk').values_list('pk', flat=True).first()
     return prev_pk, next_pk
@@ -252,16 +269,9 @@ class TicketListView(LoginRequiredMixin, ListView):
             q = user.get_ticket_visibility_q()
             if q is not None:
                 qs = qs.filter(q)
-        elif user.has_role(UserRole.RESOLVER):
-            area_q = user.get_resolver_new_tickets_q()
-            new_q = db_models.Q(status=Ticket.STATUS_NEW) if area_q is None else db_models.Q(status=Ticket.STATUS_NEW) & area_q
-            qs = qs.filter(db_models.Q(resolver=user) | new_q)
-        elif user.has_role(UserRole.SALES):
-            qs = qs.filter(sales=user)
-        elif user.has_role(UserRole.REQUESTER):
-            qs = qs.filter(user.get_requester_ticket_q())
         else:
-            qs = qs.none()
+            q = _build_user_ticket_q(user)
+            qs = qs.filter(q) if q is not None else qs.none()
 
         qs = _apply_ticket_filters(qs, self.request.GET, user)
 
@@ -304,16 +314,9 @@ class TicketExportView(LoginRequiredMixin, View):
             q = user.get_ticket_visibility_q()
             if q is not None:
                 qs = qs.filter(q)
-        elif user.has_role(UserRole.RESOLVER):
-            area_q = user.get_resolver_new_tickets_q()
-            new_q = db_models.Q(status=Ticket.STATUS_NEW) if area_q is None else db_models.Q(status=Ticket.STATUS_NEW) & area_q
-            qs = qs.filter(db_models.Q(resolver=user) | new_q)
-        elif user.has_role(UserRole.SALES):
-            qs = qs.filter(sales=user)
-        elif user.has_role(UserRole.REQUESTER):
-            qs = qs.filter(user.get_requester_ticket_q())
         else:
-            qs = qs.none()
+            q = _build_user_ticket_q(user)
+            qs = qs.filter(q) if q is not None else qs.none()
 
         qs = _apply_ticket_filters(qs, request.GET, user)
 
