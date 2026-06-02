@@ -241,13 +241,15 @@ class TicketFilterForm(forms.Form):
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if user and user.has_role('manager', 'admin'):
-            from apps.accounts.models import Company, User, UserRole
+        if user and user.has_role('manager', 'admin', 'resolver'):
+            from apps.accounts.models import Company
             self.fields['company'] = forms.ModelChoiceField(
                 queryset=Company.objects.order_by('name'),
                 required=False, label=_('Firma'),
                 empty_label=_('— vše —'),
             )
+        if user and user.has_role('manager', 'admin'):
+            from apps.accounts.models import User, UserRole
             self.fields['requester'] = forms.ModelChoiceField(
                 queryset=User.objects.filter(
                     user_roles__role=UserRole.REQUESTER
