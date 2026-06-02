@@ -259,7 +259,8 @@ class Command(BaseCommand):
         self.stdout.write(f'\n=== Uživatelé k vytvoření ({len(new_users)}) ===')
         for u in new_users:
             roles_str = ', '.join(u['roles'])
-            areas_str = ', '.join(u['areas']) if u['areas'] else '—'
+            all_areas = u['areas'] + u.get('requester_areas', [])
+            areas_str = ', '.join(all_areas) if all_areas else '—'
             self.stdout.write(
                 f"  {u['first_name']} {u['last_name']} <{u['email']}> "
                 f"| role: {roles_str} | firma: {u['company'] or '—'} | oblasti: {areas_str}"
