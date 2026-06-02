@@ -49,7 +49,7 @@ class UserCreateForm(UserCreationForm):
         widget=forms.CheckboxSelectMultiple,
         label=_('Oblasti žadatele'),
         required=False,
-        help_text=_('Zobrazí se pouze tikety firmy z těchto oblastí. Vlastní tikety jsou viditelné vždy.'),
+        help_text=_('Žadatel může zadávat tikety pouze z těchto oblastí. Při rozsahu „Tikety firmy v konkrétních oblastech" omezuje i viditelnost.'),
     )
 
     class Meta:
@@ -102,7 +102,7 @@ class UserUpdateForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple,
         label=_('Oblasti žadatele'),
         required=False,
-        help_text=_('Zobrazí se pouze tikety firmy z těchto oblastí. Vlastní tikety jsou viditelné vždy.'),
+        help_text=_('Žadatel může zadávat tikety pouze z těchto oblastí. Při rozsahu „Tikety firmy v konkrétních oblastech" omezuje i viditelnost.'),
     )
 
     class Meta:

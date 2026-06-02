@@ -93,6 +93,7 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
     form_class = UserUpdateForm
     template_name = 'accounts/user_form.html'
     success_url = reverse_lazy('accounts:user_list')
+    context_object_name = 'edited_user'
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated or not request.user.has_role(UserRole.ADMIN):

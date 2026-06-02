@@ -44,6 +44,12 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
     - **Tikety firmy v konkrétních oblastech** — vidí tikety firmy v zadaných
       oblastech; vlastní tikety jsou vždy viditelné bez ohledu na oblast
 
+  - Povolené oblasti pro vytváření tiketů se nastavují per-uživatel (administrátorem):
+    při vytváření tiketu se v nabídce oblastí zobrazí pouze povolené oblasti;
+    pokud nejsou nastaveny žádné, žadatel vidí všechny oblasti.
+    Při rozsahu „Tikety firmy v konkrétních oblastech" tato sada oblastí zároveň
+    omezuje viditelnost tiketů.
+
   - Může komentovat pouze tikety, které sám založil (bez ohledu na rozsah viditelnosti)
 
   - Má přiřazenu společnost, ke které patří
@@ -151,6 +157,10 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
     „Upravit uživatele" (pole se zobrazí pouze pokud má uživatel
     přiřazenu roli Žadatel): výchozí hodnota je „Pouze vlastní tikety"
 
+  - Nastavuje povolené oblasti žadatelům přímo na stránce „Upravit uživatele"
+    (pole se zobrazí pouze pokud má uživatel přiřazenu roli Žadatel):
+    omezuje, z jakých oblastí může žadatel vytvářet tikety
+
 ### Tabulka práv
 
 | Funkce | Žadatel | Řešitel | Obchodník | Správce | Administrátor |
@@ -186,6 +196,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | Nastavit omezení správcům (oblasti, firmy) | — | — | — | — | ✓ |
 | Nastavit oblasti řešitelům | — | — | — | — | ✓ |
 | Nastavit rozsah viditelnosti žadatelům | — | — | — | — | ✓ |
+| Nastavit povolené oblasti žadatelům | — | — | — | — | ✓ |
 | Spravovat kategorie práce | — | — | — | — | ✓ |
 
 ¹ V rámci nastaveného omezení oblasti a firem správce (pokud není omezení nastaveno, platí pro všechny tikety).

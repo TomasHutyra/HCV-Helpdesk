@@ -20,6 +20,11 @@ class TicketCreateForm(forms.ModelForm):
                 label=_('Firma'),
                 empty_label=_('— vyberte firmu —'),
             )
+        # Žadatel s omezenými oblastmi může vybírat jen ze svých povolených oblastí
+        if user and user.has_role('requester'):
+            allowed = user.requester_areas.all()
+            if allowed.exists():
+                self.fields['area'].queryset = allowed
 
 
 class TicketUpdateForm(forms.ModelForm):
