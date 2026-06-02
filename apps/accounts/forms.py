@@ -54,7 +54,7 @@ class UserCreateForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'company', 'language', 'is_active', 'requester_scope')
+        fields = ('username', 'first_name', 'last_name', 'email', 'company', 'language', 'is_active', 'requester_scope', 'notify_new_ticket')
 
     def save(self, commit=True):
         user = super().save(commit=commit)
@@ -107,7 +107,7 @@ class UserUpdateForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'company', 'language', 'is_active', 'requester_scope')
+        fields = ('username', 'first_name', 'last_name', 'email', 'company', 'language', 'is_active', 'requester_scope', 'notify_new_ticket')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -144,7 +144,12 @@ class UserUpdateForm(forms.ModelForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'language')
+        fields = ('first_name', 'last_name', 'language', 'notify_new_ticket')
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user is None or not user.is_resolver:
+            self.fields.pop('notify_new_ticket', None)
 
 
 class CompanyForm(forms.ModelForm):

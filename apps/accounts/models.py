@@ -56,6 +56,11 @@ class User(AbstractUser):
         verbose_name=_('oblasti řešitele'),
         help_text=_('Řešitel vidí nové tikety pouze z těchto oblastí. Ponechte prázdné pro přístup ke všem novým tiketům.'),
     )
+    notify_new_ticket = models.BooleanField(
+        _('notifikace nového tiketu'),
+        default=False,
+        help_text=_('Řešitel dostane e-mail při vytvoření nového tiketu ve svých oblastech.'),
+    )
 
     # ---- Rozsah viditelnosti žadatele ----
     REQUESTER_SCOPE_OWN = 'own'

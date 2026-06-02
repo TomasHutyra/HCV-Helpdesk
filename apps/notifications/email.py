@@ -53,10 +53,25 @@ def _get_notifiable_managers(ticket):
     return [m.email for m in managers if m.can_see_ticket_as_manager(ticket)]
 
 
+def _get_notifiable_resolvers(ticket):
+    """
+    Vrátí seznam e-mailů řešitelů s notify_new_ticket=True, kteří pokrývají oblast tiketu.
+    Oblast Neznámá (is_unknown) nebo null → notifikace všem aktivním řešitelům s opt-in.
+    """
+    from apps.accounts.models import User, UserRole
+    resolvers = User.objects.filter(
+        user_roles__role=UserRole.RESOLVER,
+        is_active=True,
+        notify_new_ticket=True,
+    ).prefetch_related('resolver_areas')
+    return [r.email for r in resolvers if r.can_handle_ticket_area(ticket)]
+
+
 def send_new_ticket(ticket):
-    """Nový tiket → žadateli + oprávněným správcům."""
+    """Nový tiket → žadateli + oprávněným správcům + přihlášeným řešitelům."""
     managers = _get_notifiable_managers(ticket)
-    recipients = list({ticket.requester.email} | set(managers))
+    resolvers = _get_notifiable_resolvers(ticket)
+    recipients = list({ticket.requester.email} | set(managers) | set(resolvers))
 
     _send(
         subject=_sanitize_subject(f'[HCV Helpdesk] Nový tiket #{ticket.pk}: {ticket.title}'),

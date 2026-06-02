@@ -23,11 +23,24 @@
     <form method="post" class="form-stack">
       {% csrf_token %}
       {% for field in form %}
+      {% if field.html_name == 'notify_new_ticket' %}
+      <div class="form-group" style="padding-top:4px">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          {{ field }}
+          <span>
+            <span class="form-label" style="margin-bottom:0;display:block">{{ field.label }}</span>
+            <span style="font-size:12px;color:var(--c-text-muted)">{{ field.help_text }}</span>
+          </span>
+        </label>
+        {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+      </div>
+      {% else %}
       <div class="form-group">
         <label class="form-label">{{ field.label }}</label>
         {{ field }}
         {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
       </div>
+      {% endif %}
       {% endfor %}
       <div>
         <button type="submit" class="btn btn-primary">{% trans "Uložit" %}</button>

@@ -36,6 +36,11 @@ class ProfileView(LoginRequiredMixin, UpdateView):
     def get_object(self):
         return self.request.user
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         response = super().form_valid(form)
         # Aktualizovat jazyk po uložení přes cookie (Django 4.0+)
