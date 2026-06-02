@@ -66,6 +66,13 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
     a tikety s neznámou oblastí nebo bez oblasti.
     Přiřazené tikety vidí vždy bez ohledu na oblast.
 
+  - Může si zapnout volitelné e-mailové upozornění na nové tikety
+    („Notifikace nového tiketu" v profilu nebo v administraci uživatele).
+    Pokud je zapnuto, obdrží e-mail při vytvoření nového tiketu ve svých
+    oblastech (nebo v jakékoliv oblasti, pokud nemá omezení). Tikety
+    s oblastí označenou jako „neznámá" nebo bez oblasti spustí notifikaci
+    u všech řešitelů s tímto upozorněním, bez ohledu na jejich oblasti.
+
   - Vidí přiřazené požadavky a navíc nové požadavky v rámci svých oblastí
 
   - Může komentovat přiřazené požadavky (požadavky ve stavu „Nový",
@@ -153,6 +160,10 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
   - Nastavuje oblasti řešitelům přímo na stránce „Upravit uživatele"
     (pole se zobrazí pouze pokud má uživatel přiřazenu roli Řešitel)
 
+  - Nastavuje příznak „Notifikace nového tiketu" přímo na stránce
+    „Upravit uživatele" (zobrazí se pouze pokud má uživatel roli Řešitel);
+    řešitel si tento příznak může nastavit i sám v profilu
+
   - Nastavuje rozsah viditelnosti tiketů žadatelům přímo na stránce
     „Upravit uživatele" (pole se zobrazí pouze pokud má uživatel
     přiřazenu roli Žadatel): výchozí hodnota je „Pouze vlastní tikety"
@@ -195,6 +206,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | Spravovat oblasti | — | — | — | — | ✓ |
 | Nastavit omezení správcům (oblasti, firmy) | — | — | — | — | ✓ |
 | Nastavit oblasti řešitelům | — | — | — | — | ✓ |
+| Nastavit notifikaci nového tiketu řešitelům | — | vlastní profil | — | — | ✓ |
 | Nastavit rozsah viditelnosti žadatelům | — | — | — | — | ✓ |
 | Nastavit povolené oblasti žadatelům | — | — | — | — | ✓ |
 | Spravovat kategorie práce | — | — | — | — | ✓ |
@@ -205,7 +217,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
 ³ Správce smí zapisovat čas průběžně pouze tehdy, je-li k danému tiketu zároveň přiřazen jako řešitel nebo obchodník.
 
-⁴ Řešitel vidí (a může převzít) nové tikety v rámci svých oblastí (nebo všechny, pokud nemá omezení), ale komentovat je může až po přiřazení. Přiřazené tikety vidí vždy bez ohledu na oblast. Převzít lze i tiket ve stavu „Řeší se" — v takovém případě se změní pouze přiřazený řešitel, stav zůstane.
+⁴ Řešitel vidí (a může převzít) nové tikety v rámci svých oblastí (nebo všechny, pokud nemá omezení), ale komentovat je může až po přiřazení. Přiřazené tikety vidí vždy bez ohledu na oblast. Převzít lze i tiket ve stavu „Řeší se" — v takovém případě se změní pouze přiřazený řešitel, stav zůstane. Pokud má uživatel zároveň roli Žadatel, vidí navíc i tikety, které sám založil (pravidla obou rolí se sčítají).
 
 ⁵ Žadatel může komentovat vlastní tiket i ve stavu „Vyřešeno" nebo „Zamítnuto" (může nesouhlasit s uzavřením). Řešitel a obchodník komentovat uzavřený tiket nemohou. Správce uzavřený tiket komentovat může (může reagovat nebo tiket znovu otevřít).
 
@@ -419,7 +431,7 @@ z formuláře editace oblasti.
 
 | Událost | Příjemci | Obsah e-mailu |
 |---------|----------|---------------|
-| Vytvořen nový požadavek | Žadatel + oprávnění správci ¹ | Typ, Název, Popis, Oblast, Priorita |
+| Vytvořen nový požadavek | Žadatel + oprávnění správci ¹ + řešitelé s opt-in notifikací ² | Typ, Název, Popis, Oblast, Priorita |
 | Stav změněn na „Řeší se" | Žadatel | Název, nový stav |
 | Stav změněn na „Příprava nabídky" | Žadatel | Název, nový stav |
 | Přiřazen řešitel | Řešitel | Název tiketu |
@@ -430,6 +442,12 @@ z formuláře editace oblasti.
 | Výzva k hodnocení po vyřešení | Žadatel (samostatný e-mail) | Klikatelné hvězdičky 0–5 s jednorázovými odkazy |
 
 ¹ **Výběr oprávněných správců** se řídí jejich omezeními oblastí a firem:
+
+² **Výběr řešitelů pro opt-in notifikaci** — dostane e-mail řešitel, který má zapnuto
+„Notifikace nového tiketu" a zároveň:
+- nemá nastaveny žádné oblasti (sleduje vše), nebo
+- oblast tiketu je označena jako „neznámá" nebo není vyplněna, nebo
+- oblast tiketu patří do jeho oblastí.
 
 - Správce bez omezení dostane notifikaci vždy.
 - Správce s omezením oblastí dostane notifikaci pouze o požadavcích
@@ -497,8 +515,9 @@ na tikety vytvořené v daný den nebo dříve. Obě pole jsou volitelná
 a nezávislá — lze zadat jen jedno z nich (filtr od, filtr do) nebo obě
 najednou pro přesný rozsah.
 
-Správce a administrátor mohou navíc filtrovat podle: Firma, Žadatel,
-Řešitel.
+Řešitel, správce a administrátor mohou navíc filtrovat podle: Firma.
+
+Správce a administrátor mohou navíc filtrovat podle: Žadatel, Řešitel.
 
 ### Export do Excelu
 
