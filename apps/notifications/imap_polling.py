@@ -120,16 +120,16 @@ def _can_add_email_comment(user, ticket):
     is_closed = ticket.status in (Ticket.STATUS_RESOLVED, Ticket.STATUS_REJECTED)
     if user.has_role(UserRole.ADMIN):
         return True
-    if user.has_role(UserRole.MANAGER):
-        return user.can_see_ticket_as_manager(ticket)
+    if user.has_role(UserRole.MANAGER) and user.can_see_ticket_as_manager(ticket):
+        return True
     if is_closed:
         return user.has_role(UserRole.REQUESTER) and ticket.requester == user
-    if user.has_role(UserRole.REQUESTER):
-        return ticket.requester == user
-    if user.has_role(UserRole.RESOLVER):
-        return ticket.resolver == user
-    if user.has_role(UserRole.SALES):
-        return ticket.sales == user
+    if user.has_role(UserRole.REQUESTER) and ticket.requester == user:
+        return True
+    if user.has_role(UserRole.RESOLVER) and ticket.resolver == user:
+        return True
+    if user.has_role(UserRole.SALES) and ticket.sales == user:
+        return True
     return False
 
 
