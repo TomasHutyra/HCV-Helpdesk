@@ -258,7 +258,7 @@ class TicketFilterForm(forms.Form):
                 empty_label=_('— vše —'),
             )
         if user and (
-            user.has_role('manager', 'admin')
+            user.has_role('manager', 'admin', 'resolver')
             or (user.has_role('requester') and user.requester_scope != 'own')
         ):
             from apps.accounts.models import User, UserRole
