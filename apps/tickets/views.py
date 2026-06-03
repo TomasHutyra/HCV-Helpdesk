@@ -472,8 +472,8 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
         ticket.requester = self.request.user
         user = self.request.user
 
-        # Správce/admin si vybírají firmu ve formuláři, žadatel má svou
-        if user.has_role(UserRole.MANAGER, UserRole.ADMIN):
+        # Správce, admin a řešitel si vybírají firmu ve formuláři, žadatel má svou
+        if user.has_role(UserRole.MANAGER, UserRole.ADMIN, UserRole.RESOLVER):
             ticket.company = form.cleaned_data.get('company')
         else:
             ticket.company = user.company
