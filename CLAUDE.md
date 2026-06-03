@@ -89,6 +89,7 @@ This repository currently contains only the specification. No tech stack has bee
 
 ### Ticket Fields (requester must fill on creation)
 - Type, Name, Description, Area (`IT` / `Helios` / `Neznámá`), Priority (`Vysoká` / `Střední` / `Nízká`)
+- Company: auto-assigned from user profile for pure requesters; selectable from dropdown for requesters who also hold resolver/manager/admin role
 
 ### Email-to-ticket (inbound email)
 Emails to a predefined address auto-create tickets with: type=`Podpora`, name=subject, description=body, area=`Neznámá`, priority=`Střední`.

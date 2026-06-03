@@ -237,6 +237,13 @@ Požadavky zakládá žadatel a musí vyplnit
 
 - Prioritu (Vysoká, Střední, Nízká)
 
+Firma se přiřadí automaticky podle toho, kdo tiket zakládá:
+
+- Žadatel bez role řešitele: firma se přiřadí automaticky z jeho profilu
+
+- Žadatel se zároveň rolí řešitele, správce nebo administrátora: firmu
+  vybírá ze seznamu při zakládání (může zakládat požadavky za zákazníka)
+
 Požadavek může žadatel založit i odesláním na předdefinovanou e-mailovou
 adresu. V takovém případě se požadavek založí následovně:
 
