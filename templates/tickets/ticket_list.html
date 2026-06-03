@@ -106,6 +106,7 @@
           {% include 'tickets/partials/sort_th.html' with key="priority"   label=_("Priorita")              s=s d=d p=p %}
           {% include 'tickets/partials/sort_th.html' with key="area"       label=_("Oblast")                s=s d=d p=p %}
           {% include 'tickets/partials/sort_th.html' with key="company"    label=_("Firma")                 s=s d=d p=p %}
+          {% if show_requester %}{% include 'tickets/partials/sort_th.html' with key="requester" label=_("Žadatel") s=s d=d p=p %}{% endif %}
           {% include 'tickets/partials/sort_th.html' with key="resolver"   label=_("Řešitel")               s=s d=d p=p %}
           {% if show_hours %}{% include 'tickets/partials/sort_th.html' with key="hours" label=_("Hodiny") s=s d=d p=p right=True %}{% endif %}
           {% include 'tickets/partials/sort_th.html' with key="created_at" label=_("Vytvořeno")             s=s d=d p=p %}
@@ -122,6 +123,7 @@
           <td>{% include 'tickets/partials/priority_badge.html' with ticket=ticket %}</td>
           <td class="ticket-muted">{{ ticket.area.name|default:'—' }}</td>
           <td class="ticket-muted">{{ ticket.company.name }}</td>
+          {% if show_requester %}<td class="ticket-muted">{{ ticket.requester }}</td>{% endif %}
           <td class="ticket-muted">{{ ticket.resolver|default:'—' }}</td>
           {% if show_hours %}<td class="ticket-hours">{% if ticket.hours_sum %}{{ ticket.hours_sum }} h{% else %}—{% endif %}</td>{% endif %}
           <td class="ticket-date">{{ ticket.created_at|date:"d.m.Y" }}</td>
@@ -151,6 +153,7 @@
         {% include 'tickets/partials/status_badge.html' with ticket=ticket %}
         {% include 'tickets/partials/priority_badge.html' with ticket=ticket %}
         <span class="ticket-card-company">{{ ticket.company.name }}</span>
+        {% if show_requester %}<span class="ticket-card-company">{{ ticket.requester }}</span>{% endif %}
         {% if ticket.resolver %}<span class="ticket-card-company">{{ ticket.resolver }}</span>{% endif %}
       </div>
     </a>

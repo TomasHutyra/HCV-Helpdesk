@@ -288,6 +288,12 @@ class TicketListView(LoginRequiredMixin, ListView):
         ctx['show_hours'] = user.has_role(
             UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN
         )
+        from apps.accounts.models import User as _User
+        ctx['show_requester'] = (
+            user.has_role(UserRole.MANAGER, UserRole.ADMIN, UserRole.RESOLVER, UserRole.SALES)
+            or (user.has_role(UserRole.REQUESTER)
+                and user.requester_scope != _User.REQUESTER_SCOPE_OWN)
+        )
         ctx['current_sort'] = self.request.GET.get('sort', 'created_at')
         ctx['current_dir'] = self.request.GET.get('dir', 'desc')
         # GET params bez sort/dir/page — pro sestavení sort odkazů v šabloně

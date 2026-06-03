@@ -248,19 +248,24 @@ class TicketFilterForm(forms.Form):
                 required=False, label=_('Firma'),
                 empty_label=_('— vše —'),
             )
-        if user and user.has_role('manager', 'admin'):
+        if user and user.has_role('manager', 'admin', 'requester'):
+            from apps.accounts.models import User, UserRole
+            self.fields['resolver'] = forms.ModelChoiceField(
+                queryset=User.objects.filter(
+                    user_roles__role=UserRole.RESOLVER
+                ).distinct().order_by('last_name', 'first_name'),
+                required=False, label=_('Řešitel'),
+                empty_label=_('— vše —'),
+            )
+        if user and (
+            user.has_role('manager', 'admin')
+            or (user.has_role('requester') and user.requester_scope != 'own')
+        ):
             from apps.accounts.models import User, UserRole
             self.fields['requester'] = forms.ModelChoiceField(
                 queryset=User.objects.filter(
                     user_roles__role=UserRole.REQUESTER
                 ).distinct().order_by('last_name', 'first_name'),
                 required=False, label=_('Žadatel'),
-                empty_label=_('— vše —'),
-            )
-            self.fields['resolver'] = forms.ModelChoiceField(
-                queryset=User.objects.filter(
-                    user_roles__role=UserRole.RESOLVER
-                ).distinct().order_by('last_name', 'first_name'),
-                required=False, label=_('Řešitel'),
                 empty_label=_('— vše —'),
             )
