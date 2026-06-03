@@ -98,7 +98,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 - Obchodník
 
   - Má stejné možnosti jako Řešitel, ale může být přiřazen jen
-    k požadavku typu „Požadavek na vývoj".
+    k požadavku typu „Požadavek".
 
 - Správce
 
@@ -240,7 +240,7 @@ Požadavky zakládá žadatel a musí vyplnit
 Požadavek může žadatel založit i odesláním na předdefinovanou e-mailovou
 adresu. V takovém případě se požadavek založí následovně:
 
-- Typ požadavku = Hlášení problému
+- Typ požadavku = Podpora
 
 - Název = Předmět e-mailu
 
@@ -311,7 +311,7 @@ Pravidla zpracování příchozí odpovědi:
 
 Požadavky mohu být typu
 
-- Hlášení problému
+- Podpora
 
   - Hotline problém, nefakturuje se
 
@@ -330,7 +330,7 @@ Požadavky mohu být typu
 
     - Zamítnutí: jakýkoliv stav -> Zamítnuto
 
-- Požadavek na vývoj
+- Požadavek
 
   - Fakturovaný požadavek
 
@@ -353,7 +353,7 @@ Požadavky mohu být typu
 
     - Zamítnutí: jakýkoliv stav -> Zamítnuto
 
-- Námět na zlepšení
+- Nápad
 
   - Odkladiště nápadů, je potřeba jej změnit na jeden z předchozích typů,
     aby bylo možné jej vyřešit

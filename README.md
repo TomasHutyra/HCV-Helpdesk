@@ -5,7 +5,7 @@ Webový helpdesk systém pro evidenci a správu IT požadavků. Postaven na Djan
 ## Funkce
 
 - **Role**: Žadatel, Řešitel, Obchodník, Správce, Administrátor (jeden uživatel může mít více rolí)
-- **Typy tiketů**: Hlášení problému / Požadavek na vývoj / Námět na zlepšení
+- **Typy tiketů**: Podpora / Požadavek / Nápad
 - **Stavový automat**: validované přechody stavů (django-fsm)
 - **E-mailové notifikace**: nový tiket, změna stavu, komentář, vyřešení/zamítnutí
 - **Příjem tiketů e-mailem**: IMAP polling každé 2 minuty (Celery Beat)
@@ -102,7 +102,7 @@ Přes Django Admin (`/admin/`) nebo sekci Uživatelé/Firmy v aplikaci:
 |------|----------|
 | **Žadatel** | Zakládá tikety, vidí jen vlastní, přidává komentáře |
 | **Řešitel** | Vidí přiřazené tikety, zapisuje čas, vyřeší tiket |
-| **Obchodník** | Stejně jako řešitel, jen u typu „Požadavek na vývoj" |
+| **Obchodník** | Stejně jako řešitel, jen u typu „Požadavek" |
 | **Správce** | Vidí vše, přiřazuje, zamítá, vidí statistiky |
 | **Administrátor** | Spravuje uživatele a firmy |
 

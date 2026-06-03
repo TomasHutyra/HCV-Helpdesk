@@ -69,9 +69,9 @@ class Ticket(models.Model):
     TYPE_IMPROVEMENT = 'improvement'
 
     TYPE_CHOICES = [
-        (TYPE_PROBLEM, _('Hlášení problému')),
-        (TYPE_DEVELOPMENT, _('Požadavek na vývoj')),
-        (TYPE_IMPROVEMENT, _('Námět na zlepšení')),
+        (TYPE_PROBLEM, _('Podpora')),
+        (TYPE_DEVELOPMENT, _('Požadavek')),
+        (TYPE_IMPROVEMENT, _('Nápad')),
     ]
 
     # --- Stavy ---

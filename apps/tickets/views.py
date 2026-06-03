@@ -602,7 +602,7 @@ class AssignSalesView(LoginRequiredMixin, View):
         if not _manager_has_ticket_access(request.user, ticket):
             return HttpResponse(_('Nedostatečná oprávnění.'), status=403)
         if ticket.type != Ticket.TYPE_DEVELOPMENT:
-            messages.error(request, _('Obchodníka lze přiřadit pouze k typu „Požadavek na vývoj".'))
+            messages.error(request, _('Obchodníka lze přiřadit pouze k typu „Požadavek".'))
             return redirect('tickets:detail', pk=pk)
         old_sales = ticket.sales
         old_status = ticket.status

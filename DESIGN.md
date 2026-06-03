@@ -151,14 +151,14 @@ Role jsou odděleny do modelu **`UserRole`** (M2M přes samostatnou tabulku), ab
 
 **Stavový automat** (`django-fsm`):
 ```
-Hlášení problému:    Nový → Řeší se → Vyřešeno
-                     * → Zamítnuto
+Podpora:    Nový → Řeší se → Vyřešeno
+            * → Zamítnuto
 
-Požadavek na vývoj:  Nový → Příprava nabídky → Řeší se → Vyřešeno
-                     * → Zamítnuto
+Požadavek:  Nový → Příprava nabídky → Řeší se → Vyřešeno
+            * → Zamítnuto
 
-Námět na zlepšení:   Nový
-                     * → Zamítnuto
+Nápad:      Nový
+            * → Zamítnuto
 ```
 Uzamčené stavy (`Vyřešeno`, `Zamítnuto`) povolují pouze přechod zpět na `Řeší se` / `Příprava nabídky`.
 

@@ -62,22 +62,22 @@ This repository currently contains only the specification. No tech stack has bee
 |------|----------------|
 | **Žadatel** (Requester) | Creates tickets; sees only own tickets; can comment own tickets; cannot see resolution time; belongs to a company |
 | **Řešitel** (Resolver) | Sees assigned tickets; comments; changes type/priority/area/status; logs time; resolves (requires resolution notes + time) |
-| **Obchodník** (Sales) | Same as Resolver, but assignable only to "Požadavek na vývoj" (Development Request) type tickets |
+| **Obchodník** (Sales) | Same as Resolver, but assignable only to "Požadavek" (Billable Request) type tickets |
 | **Správce** (Manager) | Sees all tickets; assigns resolver/sales; resolves/rejects; sees all statistics |
 | **Administrátor** (Admin) | Creates users; assigns roles; creates companies; assigns requesters to companies |
 
 ### Ticket Types & State Machines
 
-**Hlášení problému** (Problem Report) — non-billable:
+**Podpora** (Support) — non-billable:
 - States: `Nový → Řeší se → Vyřešeno`, any state `→ Zamítnuto`
 - Assign resolver: `Nový → Řeší se`
 
-**Požadavek na vývoj** (Development Request) — billable, may have a Sales person:
+**Požadavek** (Billable Request) — billable, may have a Sales person:
 - States: `Nový → Příprava nabídky → Řeší se → Vyřešeno`, any state `→ Zamítnuto`
 - Assign sales: `Nový → Příprava nabídky`
 - Assign resolver: `Nový` or `Příprava nabídky → Řeší se`
 
-**Námět na zlepšení** (Improvement Idea) — must be converted to another type before it can be resolved:
+**Nápad** (Idea) — must be converted to another type before it can be resolved:
 - States: `Nový`, any state `→ Zamítnuto`
 - Cannot be resolved until type is changed
 
@@ -91,7 +91,7 @@ This repository currently contains only the specification. No tech stack has bee
 - Type, Name, Description, Area (`IT` / `Helios` / `Neznámá`), Priority (`Vysoká` / `Střední` / `Nízká`)
 
 ### Email-to-ticket (inbound email)
-Emails to a predefined address auto-create tickets with: type=`Hlášení problému`, name=subject, description=body, area=`Neznámá`, priority=`Střední`.
+Emails to a predefined address auto-create tickets with: type=`Podpora`, name=subject, description=body, area=`Neznámá`, priority=`Střední`.
 
 ### Notifications (email)
 | Event | Recipients | Content |
