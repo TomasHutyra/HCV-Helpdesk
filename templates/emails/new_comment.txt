@@ -8,5 +8,5 @@ Komentář:
 {{ comment.body }}
 
 ----------------------------------------------
-Pro zobrazení tiketu se přihlaste do systému HCV Helpdesk.
-{% if reply_ticket_id %}Odpovědí na tento e-mail přidáte komentář k tiketu #{{ reply_ticket_id }}. [#{{ reply_ticket_id }}#]{% endif %}
+{% if ticket_url %}Zobrazit tiket: {{ ticket_url }}
+{% endif %}{% if reply_ticket_id %}Odpovědí na tento e-mail přidáte komentář k tiketu #{{ reply_ticket_id }}. [#{{ reply_ticket_id }}#]{% endif %}

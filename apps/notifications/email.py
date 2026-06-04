@@ -30,10 +30,15 @@ def _ticket_token(ticket_id):
 def _send(subject, template, context, recipients, ticket_id=None, cc=None):
     """Odešle e-mail na seznam příjemců. Chyby loguje, ale nevyhazuje výjimku."""
     if not recipients:
-        return
+        if not cc:
+            return
+        # Všichni primární příjemci byli vyřazeni (např. autor = jediný příjemce),
+        # ale CC existuje — povýšíme CC na To, aby notifikace kontaktní osobě dorazila.
+        recipients, cc = cc, []
     if ticket_id:
         subject = f'{subject} {_ticket_token(ticket_id)}'
-        context = {**context, 'reply_ticket_id': ticket_id}
+        ticket_url = settings.SITE_URL.rstrip('/') + reverse('tickets:detail', args=[ticket_id])
+        context = {**context, 'reply_ticket_id': ticket_id, 'ticket_url': ticket_url}
     body = render_to_string(template, context)
     try:
         from django.core.mail import EmailMessage
