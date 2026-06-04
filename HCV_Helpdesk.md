@@ -237,6 +237,20 @@ Požadavky zakládá žadatel a musí vyplnit
 
 - Prioritu (Vysoká, Střední, Nízká)
 
+Volitelně může žadatel vyplnit kontaktní osobu:
+
+- Jméno kontaktní osoby
+
+- E-mail kontaktní osoby
+
+Kontaktní osoba je vhodná, pokud žadatel zakládá tiket za někoho jiného
+nebo chce uvést osobu, kterou mají řešitelé kontaktovat. Kontaktní osoba
+dostává kopii (CC) všech notifikačních e-mailů k danému tiketu (nový
+tiket, změna stavu, komentář, vyřešení/zamítnutí). Hodnoticí e-mail po
+vyřešení se kontaktní osobě nezasílá. Kontaktní osoba není uživatelem
+systému a nemá přístup k tiketu. Kontaktní osobu může po vytvoření tiketu
+upravit pouze staff (řešitel, správce, administrátor).
+
 Firma se přiřadí automaticky podle toho, kdo tiket zakládá:
 
 - Žadatel bez role řešitele: firma se přiřadí automaticky z jeho profilu
@@ -438,14 +452,14 @@ z formuláře editace oblasti.
 
 | Událost | Příjemci | Obsah e-mailu |
 |---------|----------|---------------|
-| Vytvořen nový požadavek | Žadatel + oprávnění správci ¹ + řešitelé s opt-in notifikací ² | Typ, Název, Popis, Oblast, Priorita |
-| Stav změněn na „Řeší se" | Žadatel | Název, nový stav |
-| Stav změněn na „Příprava nabídky" | Žadatel | Název, nový stav |
+| Vytvořen nový požadavek | Žadatel + oprávnění správci ¹ + řešitelé s opt-in notifikací ² + kontaktní osoba (CC) ³ | Typ, Název, Popis, Oblast, Priorita |
+| Stav změněn na „Řeší se" | Žadatel + kontaktní osoba (CC) ³ | Název, nový stav |
+| Stav změněn na „Příprava nabídky" | Žadatel + kontaktní osoba (CC) ³ | Název, nový stav |
 | Přiřazen řešitel | Řešitel | Název tiketu |
 | Přiřazen obchodník | Obchodník | Název tiketu |
-| Přidán komentář | Všichni přiřazení (žadatel, řešitel, obchodník) kromě autora komentáře | Název, text komentáře |
-| Požadavek vyřešen | Žadatel | Název, stav „Vyřešeno", způsob vyřešení |
-| Požadavek zamítnut | Žadatel | Název, stav „Zamítnuto", důvod zamítnutí |
+| Přidán komentář | Všichni přiřazení (žadatel, řešitel, obchodník) kromě autora komentáře + kontaktní osoba (CC) ³ | Název, text komentáře |
+| Požadavek vyřešen | Žadatel + kontaktní osoba (CC) ³ | Název, stav „Vyřešeno", způsob vyřešení |
+| Požadavek zamítnut | Žadatel + kontaktní osoba (CC) ³ | Název, stav „Zamítnuto", důvod zamítnutí |
 | Výzva k hodnocení po vyřešení | Žadatel (samostatný e-mail) | Klikatelné hvězdičky 0–5 s jednorázovými odkazy |
 
 ¹ **Výběr oprávněných správců** se řídí jejich omezeními oblastí a firem:
@@ -464,6 +478,12 @@ z formuláře editace oblasti.
   daných firem.
 - Správce s oběma omezeními musí požadavek splňovat zároveň jednu
   z oblastí i jednu z firem.
+
+³ **Kontaktní osoba (CC)** — pokud má tiket vyplněn e-mail kontaktní
+osoby, dostane tato osoba kopii (CC) notifikace. CC se nezasílá, pokud
+by adresa kontaktní osoby byla shodná s některým z primárních příjemců
+(ochrana před duplicitním doručením). Hodnoticí e-mail po vyřešení se
+kontaktní osobě nezasílá.
 
 ### Hodnocení spokojenosti
 

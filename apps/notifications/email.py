@@ -16,11 +16,18 @@ def _sanitize_subject(subject):
     return subject.replace('\r', '').replace('\n', ' ')
 
 
+def _cc_emails(ticket):
+    """Vrátí seznam CC příjemců tiketu (kontaktní osoba, pokud je vyplněna)."""
+    if ticket.contact_person_email:
+        return [ticket.contact_person_email]
+    return []
+
+
 def _ticket_token(ticket_id):
     return f'[#{ticket_id}#]'
 
 
-def _send(subject, template, context, recipients, ticket_id=None):
+def _send(subject, template, context, recipients, ticket_id=None, cc=None):
     """Odešle e-mail na seznam příjemců. Chyby loguje, ale nevyhazuje výjimku."""
     if not recipients:
         return
@@ -29,14 +36,16 @@ def _send(subject, template, context, recipients, ticket_id=None):
         context = {**context, 'reply_ticket_id': ticket_id}
     body = render_to_string(template, context)
     try:
-        send_mail(
+        from django.core.mail import EmailMessage
+        msg = EmailMessage(
             subject=subject,
-            message=body,
+            body=body,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=recipients,
-            fail_silently=False,
+            to=recipients,
+            cc=cc or [],
         )
-        logger.info('E-mail "%s" odeslán na: %s', subject, recipients)
+        msg.send(fail_silently=False)
+        logger.info('E-mail "%s" odeslán na: %s, CC: %s', subject, recipients, cc or [])
     except Exception as exc:
         logger.error('Chyba při odesílání e-mailu "%s": %s', subject, exc)
 
@@ -72,6 +81,7 @@ def send_new_ticket(ticket):
     managers = _get_notifiable_managers(ticket)
     resolvers = _get_notifiable_resolvers(ticket)
     recipients = list({ticket.requester.email} | set(managers) | set(resolvers))
+    recipients_set = set(recipients)
 
     _send(
         subject=_sanitize_subject(f'[HCV Helpdesk] Nový tiket #{ticket.pk}: {ticket.title}'),
@@ -79,17 +89,20 @@ def send_new_ticket(ticket):
         context={'ticket': ticket},
         recipients=recipients,
         ticket_id=ticket.pk,
+        cc=[e for e in _cc_emails(ticket) if e not in recipients_set],
     )
 
 
 def send_status_change(ticket):
     """Změna stavu na Řeší se nebo Příprava nabídky → žadateli."""
+    recipients = [ticket.requester.email]
     _send(
         subject=f'[HCV Helpdesk] Stav tiketu #{ticket.pk} změněn: {ticket.get_status_display()}',
         template='emails/status_change.txt',
         context={'ticket': ticket},
-        recipients=[ticket.requester.email],
+        recipients=recipients,
         ticket_id=ticket.pk,
+        cc=[e for e in _cc_emails(ticket) if e not in recipients],
     )
 
 
@@ -103,12 +116,14 @@ def send_new_comment(comment):
         recipients_set.add(ticket.sales.email)
     recipients_set.discard(comment.author.email)
 
+    cc = [e for e in _cc_emails(ticket) if e not in recipients_set and e != comment.author.email]
     _send(
         subject=_sanitize_subject(f'[HCV Helpdesk] Nový komentář k tiketu #{ticket.pk}: {ticket.title}'),
         template='emails/new_comment.txt',
         context={'ticket': ticket, 'comment': comment},
         recipients=list(recipients_set),
         ticket_id=ticket.pk,
+        cc=cc,
     )
 
 
@@ -125,12 +140,14 @@ def send_assigned_to_you(ticket, assignee):
 
 def send_ticket_closed(ticket, closed_as):
     """Vyřešení nebo zamítnutí → žadateli."""
+    recipients = [ticket.requester.email]
     _send(
         subject=_sanitize_subject(f'[HCV Helpdesk] Tiket #{ticket.pk} {ticket.get_status_display()}: {ticket.title}'),
         template='emails/ticket_closed.txt',
         context={'ticket': ticket, 'closed_as': closed_as},
-        recipients=[ticket.requester.email],
+        recipients=recipients,
         ticket_id=ticket.pk,
+        cc=[e for e in _cc_emails(ticket) if e not in recipients],
     )
     if closed_as == 'resolved':
         send_rating_request(ticket)

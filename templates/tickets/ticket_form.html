@@ -88,6 +88,22 @@
       </div>
       {% endif %}
 
+      <div style="margin-top:8px;padding-top:16px;border-top:1px solid var(--c-border)">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--c-text-muted);margin-bottom:10px">{% trans "Kontaktní osoba" %} <span style="font-weight:400;text-transform:none;letter-spacing:0">({% trans "volitelné" %})</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">{{ form.contact_person_name.label }}</label>
+            <input type="text" name="contact_person_name" value="{{ form.contact_person_name.value|default:'' }}" placeholder="{% trans 'Jméno a příjmení' %}">
+            {% if form.contact_person_name.errors %}<div class="form-error">{{ form.contact_person_name.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">{{ form.contact_person_email.label }}</label>
+            <input type="email" name="contact_person_email" value="{{ form.contact_person_email.value|default:'' }}" placeholder="{% trans 'e-mail@firma.cz' %}">
+            {% if form.contact_person_email.errors %}<div class="form-error">{{ form.contact_person_email.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
       {% if not object %}
       <div class="form-group">
         <label class="form-label">{% trans "Přílohy" %} <span style="font-weight:400;color:var(--c-text-muted)">({% trans "volitelné" %})</span></label>

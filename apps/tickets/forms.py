@@ -7,7 +7,7 @@ from .models import Ticket, Comment, TimeLog, Area, WorkCategory, ALLOWED_EXTENS
 class TicketCreateForm(forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ('type', 'title', 'description', 'area', 'priority')
+        fields = ('type', 'title', 'description', 'area', 'priority', 'contact_person_name', 'contact_person_email')
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -31,7 +31,7 @@ class TicketUpdateForm(forms.ModelForm):
     """Pro Řešitele a Správce — mohou měnit typ, prioritu, oblast, kategorii práce."""
     class Meta:
         model = Ticket
-        fields = ('type', 'title', 'description', 'area', 'priority', 'work_category')
+        fields = ('type', 'title', 'description', 'area', 'priority', 'work_category', 'contact_person_name', 'contact_person_email')
 
     def __init__(self, *args, area=None, **kwargs):
         super().__init__(*args, **kwargs)

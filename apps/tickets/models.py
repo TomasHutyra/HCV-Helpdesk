@@ -144,6 +144,9 @@ class Ticket(models.Model):
         related_name='tickets', verbose_name=_('kategorie práce'),
     )
 
+    contact_person_name = models.CharField(_('jméno kontaktní osoby'), max_length=200, blank=True, default='')
+    contact_person_email = models.EmailField(_('e-mail kontaktní osoby'), blank=True, default='')
+
     resolution_notes = models.TextField(_('způsob vyřešení'), blank=True)
     rejection_reason = models.TextField(_('důvod zamítnutí'), blank=True)
 
@@ -305,6 +308,7 @@ class TicketChange(models.Model):
     FIELD_ATTACHMENT_DELETED = 'attachment_deleted'
     FIELD_TIMELOG = 'timelog'
     FIELD_WORK_CATEGORY = 'work_category'
+    FIELD_CONTACT_PERSON = 'contact_person'
 
     INTERNAL_FIELDS = {FIELD_TIMELOG, FIELD_WORK_CATEGORY}
 
@@ -350,6 +354,7 @@ class TicketChange(models.Model):
             self.FIELD_TITLE: _('Název'),
             self.FIELD_DESCRIPTION: _('Popis'),
             self.FIELD_WORK_CATEGORY: _('Kategorie práce'),
+            self.FIELD_CONTACT_PERSON: _('Kontaktní osoba'),
         }
         label = labels.get(self.field, self.field)
         if self.old_value:

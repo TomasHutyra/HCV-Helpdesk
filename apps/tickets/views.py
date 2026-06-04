@@ -534,6 +534,8 @@ class TicketUpdateView(LoginRequiredMixin, UpdateView):
         old = Ticket.objects.select_related('area').get(pk=self.object.pk)
         old_description = old.description
         old_title = old.title
+        old_contact_name = old.contact_person_name
+        old_contact_email = old.contact_person_email
 
         ticket = form.save(commit=False)
 
@@ -564,6 +566,17 @@ class TicketUpdateView(LoginRequiredMixin, UpdateView):
             _log_change(ticket, user, TicketChange.FIELD_WORK_CATEGORY,
                         str(old.work_category) if old.work_category else '',
                         str(ticket.work_category) if ticket.work_category else '')
+        if old_contact_name != ticket.contact_person_name or old_contact_email != ticket.contact_person_email:
+            def _fmt_contact(name, email):
+                parts = []
+                if name:
+                    parts.append(name)
+                if email:
+                    parts.append(email)
+                return ', '.join(parts) if parts else '—'
+            _log_change(ticket, user, TicketChange.FIELD_CONTACT_PERSON,
+                        _fmt_contact(old_contact_name, old_contact_email),
+                        _fmt_contact(ticket.contact_person_name, ticket.contact_person_email))
 
         messages.success(self.request, _('Tiket byl uložen.'))
         return redirect('tickets:detail', pk=ticket.pk)

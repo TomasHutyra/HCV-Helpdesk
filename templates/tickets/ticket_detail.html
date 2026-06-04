@@ -73,6 +73,15 @@
     <div class="card card-body-sm">
       <div class="meta-row"><span class="meta-label">{% trans "Firma" %}</span><span class="meta-value">{{ ticket.company }}</span></div>
       <div class="meta-row"><span class="meta-label">{% trans "Žadatel" %}</span><span class="meta-value">{{ ticket.requester }}</span></div>
+      {% if ticket.contact_person_name or ticket.contact_person_email %}
+      <div class="meta-row" style="align-items:flex-start">
+        <span class="meta-label">{% trans "Kontaktní osoba" %}</span>
+        <span class="meta-value" style="font-weight:400">
+          {% if ticket.contact_person_name %}<span style="display:block">{{ ticket.contact_person_name }}</span>{% endif %}
+          {% if ticket.contact_person_email %}<a href="mailto:{{ ticket.contact_person_email }}" style="font-size:13px;color:var(--c-primary)">{{ ticket.contact_person_email }}</a>{% endif %}
+        </span>
+      </div>
+      {% endif %}
       <div class="meta-row"><span class="meta-label">{% trans "Řešitel" %}</span><span class="meta-value">{{ ticket.resolver|default:'—' }}</span></div>
       <div class="meta-row"><span class="meta-label">{% trans "Obchodník" %}</span><span class="meta-value">{{ ticket.sales|default:'—' }}</span></div>
       <div class="meta-row" style="margin-top:4px;padding-top:12px;border-top:1px solid var(--c-border)"><span class="meta-label">{% trans "Vytvořeno" %}</span><span class="meta-value" style="font-weight:400;font-size:13px">{{ ticket.created_at|date:"d.m.Y H:i" }}</span></div>
