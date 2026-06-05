@@ -104,6 +104,85 @@
         </div>
       </div>
 
+      {% if show_watchers_field %}
+      <div style="margin-top:8px;padding-top:16px;border-top:1px solid var(--c-border)">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--c-text-muted);margin-bottom:10px">
+          {% trans "Sledující" %} <span style="font-weight:400;text-transform:none;letter-spacing:0">({% trans "volitelné" %})</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input type="text" id="watcher-input" list="watcher-datalist"
+                 placeholder="{% trans 'e-mail nebo jméno...' %}"
+                 style="flex:1;min-width:0">
+          <datalist id="watcher-datalist">
+            {% for u in watcher_user_options %}
+            <option value="{{ u.email }}">{{ u.get_full_name }} ({{ u.email }})</option>
+            {% endfor %}
+          </datalist>
+          <button type="button" class="btn btn-secondary" onclick="watcherAdd()">+ {% trans "Přidat" %}</button>
+        </div>
+        <div id="watcher-chips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:4px"></div>
+        <input type="hidden" name="watchers" id="watchers-hidden" value="{{ initial_watchers }}">
+      </div>
+
+      <script>
+      (function () {
+        var hidden = document.getElementById('watchers-hidden');
+        var chips = document.getElementById('watcher-chips');
+        var input = document.getElementById('watcher-input');
+
+        function getEmails() {
+          var val = hidden.value.trim();
+          return val ? val.split(',').map(function(e){ return e.trim(); }).filter(Boolean) : [];
+        }
+
+        function setEmails(arr) {
+          hidden.value = arr.join(',');
+        }
+
+        function renderChips() {
+          chips.innerHTML = '';
+          getEmails().forEach(function(email) {
+            var chip = document.createElement('span');
+            chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:var(--c-bg);border:1px solid var(--c-border);border-radius:999px;font-size:13px';
+            var label = document.createElement('span');
+            label.textContent = email;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = '×';
+            btn.style.cssText = 'background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--c-text-muted);font-size:16px';
+            btn.setAttribute('data-email', email);
+            btn.addEventListener('click', function() {
+              setEmails(getEmails().filter(function(e){ return e !== this.getAttribute('data-email'); }.bind(this)));
+              renderChips();
+            });
+            chip.appendChild(label);
+            chip.appendChild(btn);
+            chips.appendChild(chip);
+          });
+        }
+
+        window.watcherAdd = function() {
+          var val = input.value.trim().toLowerCase();
+          if (!val || val.indexOf('@') === -1) return;
+          var emails = getEmails();
+          if (emails.indexOf(val) === -1) {
+            emails.push(val);
+            setEmails(emails);
+            renderChips();
+          }
+          input.value = '';
+          input.focus();
+        };
+
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') { e.preventDefault(); watcherAdd(); }
+        });
+
+        renderChips();
+      }());
+      </script>
+      {% endif %}
+
       {% if not object %}
       <div class="form-group">
         <label class="form-label">{% trans "Přílohy" %} <span style="font-weight:400;color:var(--c-text-muted)">({% trans "volitelné" %})</span></label>
