@@ -82,6 +82,18 @@
         </span>
       </div>
       {% endif %}
+      {% if watchers %}
+      <div class="meta-row" style="align-items:flex-start">
+        <span class="meta-label">{% trans "Sledující" %}</span>
+        <span class="meta-value" style="font-weight:400">
+          {% for w in watchers %}
+          <span style="display:block;font-size:13px">
+            {% if w.name %}{{ w.name }} <span style="color:var(--c-text-muted)">({{ w.email }})</span>{% else %}{{ w.email }}{% endif %}
+          </span>
+          {% endfor %}
+        </span>
+      </div>
+      {% endif %}
       <div class="meta-row"><span class="meta-label">{% trans "Řešitel" %}</span><span class="meta-value">{{ ticket.resolver|default:'—' }}</span></div>
       <div class="meta-row"><span class="meta-label">{% trans "Obchodník" %}</span><span class="meta-value">{{ ticket.sales|default:'—' }}</span></div>
       <div class="meta-row" style="margin-top:4px;padding-top:12px;border-top:1px solid var(--c-border)"><span class="meta-label">{% trans "Vytvořeno" %}</span><span class="meta-value" style="font-weight:400;font-size:13px">{{ ticket.created_at|date:"d.m.Y H:i" }}</span></div>
