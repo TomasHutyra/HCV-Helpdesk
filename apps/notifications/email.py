@@ -98,8 +98,8 @@ def send_new_ticket(ticket):
     managers = _get_notifiable_managers(ticket)
     resolvers = _get_notifiable_resolvers(ticket)
     watchers = _get_watcher_emails(ticket)
-    recipients = list({ticket.requester.email} | set(managers) | set(resolvers) | set(watchers))
-    recipients_set = set(recipients)
+    recipients_set = {ticket.requester.email} | set(managers) | set(resolvers) | set(watchers)
+    recipients = list(recipients_set)
 
     _send(
         subject=_sanitize_subject(f'[HCV Helpdesk] Nový tiket #{ticket.pk}: {ticket.title}'),
