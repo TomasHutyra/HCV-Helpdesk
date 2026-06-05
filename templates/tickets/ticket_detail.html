@@ -194,7 +194,7 @@
       <form method="post" action="{% url 'tickets:resolve' ticket.pk %}" class="form-stack">
         {% csrf_token %}
         <textarea name="resolution_notes" rows="4" required placeholder="{% trans 'Způsob vyřešení…' %}"></textarea>
-        <input type="number" name="hours" step="0.25" min="0.25"
+        <input type="number" name="hours" step="0.01" min="0.25"
                {% if not has_timelogs %}required{% endif %}
                placeholder="{% if not has_timelogs %}{% trans 'Hodiny (povinné)' %}{% else %}{% trans 'Hodiny (volitelné)' %}{% endif %}">
         <button type="submit" class="btn btn-success btn-full">{% trans "Označit jako vyřešeno" %}</button>
@@ -232,7 +232,7 @@
             hx-target="#timelog-section" hx-swap="innerHTML"
             class="form-stack">
         {% csrf_token %}
-        <input type="number" name="hours" step="0.25" min="0.25" required placeholder="{% trans 'Hodiny (např. 1.5)' %}">
+        <input type="number" name="hours" step="0.01" min="0.25" required placeholder="{% trans 'Hodiny (např. 1.5)' %}">
         <input type="text" name="note" placeholder="{% trans 'Poznámka (volitelné)' %}">
         <button type="submit" class="btn btn-secondary btn-full">{% trans "Uložit čas" %}</button>
       </form>

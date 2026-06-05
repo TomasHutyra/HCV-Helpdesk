@@ -432,6 +432,8 @@ Při vyřešení požadavku je pole „Hodiny" povinné, pokud k požadavku dosu
 neexistuje žádný záznam času. Pokud již záznamy existují, pole je
 volitelné.
 
+Minimální hodnota záznamu je **0,25 h** (čtvrt hodiny), krok je **0,01 h**.
+
 ### Kategorie práce
 
 Každý tiket může mít přiřazenu interní kategorii práce (např. instalace
