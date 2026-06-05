@@ -450,9 +450,11 @@ z formuláře editace oblasti.
 
 ### Notifikace
 
+Všechny notifikační e-maily jsou odesílány ve dvou formátech současně (plain text + HTML alternativa). HTML verze obsahuje klikatelný odkaz na tiket, barevně kódované záhlaví podle typu události a strukturovaná metadata. Popis tiketu je v HTML e-mailu zkrácen na 300 znaků. Token `[#42#]` je přítomen v těle i předmětu každého e-mailu pro reply-to-ticket workflow.
+
 | Událost | Příjemci | Obsah e-mailu |
 |---------|----------|---------------|
-| Vytvořen nový požadavek | Žadatel + oprávnění správci ¹ + řešitelé s opt-in notifikací ² + kontaktní osoba (CC) ³ | Typ, Název, Popis, Oblast, Priorita |
+| Vytvořen nový požadavek | Žadatel + oprávnění správci ¹ + řešitelé s opt-in notifikací ² + kontaktní osoba (CC) ³ | Typ, Název, Popis (zkráceno na 300 zn.), Oblast, Priorita |
 | Stav změněn na „Řeší se" | Žadatel + kontaktní osoba (CC) ³ | Název, nový stav |
 | Stav změněn na „Příprava nabídky" | Žadatel + kontaktní osoba (CC) ³ | Název, nový stav |
 | Přiřazen řešitel | Řešitel | Název tiketu |
