@@ -649,12 +649,11 @@ class TicketUpdateView(LoginRequiredMixin, UpdateView):
         new_emails = _parse_watchers(raw_watchers)
         ticket.ticket_watchers.exclude(email__in=new_emails).delete()
         for email in new_emails:
-            if not ticket.ticket_watchers.filter(email=email).exists():
-                user_match = AccountUser.objects.filter(email__iexact=email).first()
-                TicketWatcher.objects.create(
-                    ticket=ticket, email=email,
-                    name=user_match.get_full_name() if user_match else '',
-                )
+            user_match = AccountUser.objects.filter(email__iexact=email).first()
+            TicketWatcher.objects.get_or_create(
+                ticket=ticket, email=email,
+                defaults={'name': user_match.get_full_name() if user_match else ''},
+            )
 
         messages.success(self.request, _('Tiket byl uložen.'))
         return redirect('tickets:detail', pk=ticket.pk)
