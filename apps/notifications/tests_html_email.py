@@ -144,10 +144,9 @@ class NewCommentHtmlTest(TestCase):
     def _html(self):
         from apps.notifications.email import send_new_comment
         send_new_comment(self.comment)
-        for msg in mail.outbox:
-            for content, mime in getattr(msg, 'alternatives', []):
-                if mime == 'text/html':
-                    return content
+        for content, mime in getattr(mail.outbox[-1], 'alternatives', []):
+            if mime == 'text/html':
+                return content
         return None
 
     def test_contains_ticket_title(self):
