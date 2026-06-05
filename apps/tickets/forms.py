@@ -239,7 +239,7 @@ class TicketFilterForm(forms.Form):
         input_formats=['%Y-%m-%d'],
     )
 
-    def __init__(self, *args, user=None, **kwargs):
+    def __init__(self, *args, user=None, base_qs=None, **kwargs):
         super().__init__(*args, **kwargs)
         if user and user.has_role('manager', 'admin', 'resolver'):
             from apps.accounts.models import Company
@@ -249,11 +249,18 @@ class TicketFilterForm(forms.Form):
                 empty_label=_('— vše —'),
             )
         if user and user.has_role('manager', 'admin', 'requester'):
-            from apps.accounts.models import User, UserRole
-            self.fields['resolver'] = forms.ModelChoiceField(
-                queryset=User.objects.filter(
+            from apps.accounts.models import User
+            if base_qs is not None:
+                resolver_qs = User.objects.filter(
+                    pk__in=base_qs.exclude(resolver__isnull=True).values('resolver')
+                ).order_by('last_name', 'first_name')
+            else:
+                from apps.accounts.models import UserRole
+                resolver_qs = User.objects.filter(
                     user_roles__role=UserRole.RESOLVER
-                ).distinct().order_by('last_name', 'first_name'),
+                ).distinct().order_by('last_name', 'first_name')
+            self.fields['resolver'] = forms.ModelChoiceField(
+                queryset=resolver_qs,
                 required=False, label=_('Řešitel'),
                 empty_label=_('— vše —'),
             )
@@ -261,11 +268,18 @@ class TicketFilterForm(forms.Form):
             user.has_role('manager', 'admin', 'resolver')
             or (user.has_role('requester') and user.requester_scope != 'own')
         ):
-            from apps.accounts.models import User, UserRole
-            self.fields['requester'] = forms.ModelChoiceField(
-                queryset=User.objects.filter(
+            from apps.accounts.models import User
+            if base_qs is not None:
+                requester_qs = User.objects.filter(
+                    pk__in=base_qs.exclude(requester__isnull=True).values('requester')
+                ).order_by('last_name', 'first_name')
+            else:
+                from apps.accounts.models import UserRole
+                requester_qs = User.objects.filter(
                     user_roles__role=UserRole.REQUESTER
-                ).distinct().order_by('last_name', 'first_name'),
+                ).distinct().order_by('last_name', 'first_name')
+            self.fields['requester'] = forms.ModelChoiceField(
+                queryset=requester_qs,
                 required=False, label=_('Žadatel'),
                 empty_label=_('— vše —'),
             )

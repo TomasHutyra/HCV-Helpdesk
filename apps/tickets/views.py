@@ -111,6 +111,21 @@ def _build_user_ticket_q(user):
     return result
 
 
+def _get_visible_tickets_qs(user):
+    """Základní queryset tiketů viditelných uživateli (bez dalších filtrů)."""
+    qs = Ticket.objects.all()
+    if user.has_role(UserRole.ADMIN):
+        pass
+    elif user.has_role(UserRole.MANAGER):
+        q = user.get_ticket_visibility_q()
+        if q is not None:
+            qs = qs.filter(q)
+    else:
+        q = _build_user_ticket_q(user)
+        qs = qs.filter(q) if q is not None else qs.none()
+    return qs
+
+
 def _can_delete_attachment(user, attachment):
     """Smí uživatel smazat přílohu? (nahrávatel nebo správce/admin)"""
     if user.has_role(UserRole.ADMIN):
@@ -261,18 +276,7 @@ class TicketListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Ticket.objects.select_related('requester', 'resolver', 'sales', 'company', 'area')
-
-        if user.has_role(UserRole.ADMIN):
-            pass
-        elif user.has_role(UserRole.MANAGER):
-            q = user.get_ticket_visibility_q()
-            if q is not None:
-                qs = qs.filter(q)
-        else:
-            q = _build_user_ticket_q(user)
-            qs = qs.filter(q) if q is not None else qs.none()
-
+        qs = _get_visible_tickets_qs(user).select_related('requester', 'resolver', 'sales', 'company', 'area')
         qs = _apply_ticket_filters(qs, self.request.GET, user)
 
         show_hours = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
@@ -284,7 +288,8 @@ class TicketListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
-        ctx['filter_form'] = TicketFilterForm(self.request.GET, user=user)
+        base_qs = _get_visible_tickets_qs(user)
+        ctx['filter_form'] = TicketFilterForm(self.request.GET, user=user, base_qs=base_qs)
         ctx['show_hours'] = user.has_role(
             UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN
         )
