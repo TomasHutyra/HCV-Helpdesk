@@ -89,7 +89,7 @@
       <div class="meta-row"><span class="meta-label">{% trans "Vyřešeno" %}</span><span class="meta-value" style="font-weight:400;font-size:13px">{{ ticket.resolved_at|date:"d.m.Y H:i" }}</span></div>
       {% endif %}
       {% if show_hours %}
-      <div class="meta-row"><span class="meta-label">{% trans "Celkem hodin" %}</span><span class="meta-value">{{ ticket.total_hours }} h</span></div>
+      <div class="meta-row"><span class="meta-label">{% trans "Celkem hodin" %}</span><span class="meta-value">{{ ticket.total_hours|floatformat:"-2" }} h</span></div>
       <div class="meta-row"><span class="meta-label">{% trans "Kategorie práce" %}</span><span class="meta-value">{{ ticket.work_category|default:'—' }}</span></div>
       {% endif %}
       {% if ticket.rating is not None %}

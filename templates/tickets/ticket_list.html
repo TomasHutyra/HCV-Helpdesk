@@ -125,7 +125,7 @@
           <td class="ticket-muted">{{ ticket.company.name }}</td>
           {% if show_requester %}<td class="ticket-muted">{{ ticket.requester }}</td>{% endif %}
           <td class="ticket-muted">{{ ticket.resolver|default:'—' }}</td>
-          {% if show_hours %}<td class="ticket-hours">{% if ticket.hours_sum %}{{ ticket.hours_sum }} h{% else %}—{% endif %}</td>{% endif %}
+          {% if show_hours %}<td class="ticket-hours">{% if ticket.hours_sum %}{{ ticket.hours_sum|floatformat:"-2" }} h{% else %}—{% endif %}</td>{% endif %}
           <td class="ticket-date">{{ ticket.created_at|date:"d.m.Y" }}</td>
         </tr>
         {% empty %}
