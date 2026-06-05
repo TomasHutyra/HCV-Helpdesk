@@ -212,7 +212,11 @@ class WorkCategoryForm(forms.ModelForm):
 
 class TicketFilterForm(forms.Form):
     status = forms.ChoiceField(
-        choices=[('', _('— vše —'))] + Ticket.STATUS_CHOICES,
+        choices=[
+            ('', _('— vše —')),
+            ('open', _('— otevřené —')),
+            ('closed', _('— zavřené —')),
+        ] + Ticket.STATUS_CHOICES,
         required=False, label=_('Stav'),
     )
     type = forms.ChoiceField(

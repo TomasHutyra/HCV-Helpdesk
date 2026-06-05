@@ -243,7 +243,15 @@ def _apply_ticket_filters(qs, get_params, user):
     form = TicketFilterForm(get_params, user=user)
     if form.is_valid():
         if form.cleaned_data.get('status'):
-            qs = qs.filter(status=form.cleaned_data['status'])
+            status_val = form.cleaned_data['status']
+            if status_val == 'open':
+                qs = qs.filter(status__in=[
+                    Ticket.STATUS_NEW, Ticket.STATUS_OFFER, Ticket.STATUS_IN_PROGRESS,
+                ])
+            elif status_val == 'closed':
+                qs = qs.filter(status__in=[Ticket.STATUS_RESOLVED, Ticket.STATUS_REJECTED])
+            else:
+                qs = qs.filter(status=status_val)
         if form.cleaned_data.get('type'):
             qs = qs.filter(type=form.cleaned_data['type'])
         if form.cleaned_data.get('area'):
