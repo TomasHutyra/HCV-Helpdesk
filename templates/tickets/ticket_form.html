@@ -151,6 +151,7 @@
             btn.textContent = '×';
             btn.style.cssText = 'background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--c-text-muted);font-size:16px';
             btn.setAttribute('data-email', email);
+            btn.setAttribute('aria-label', '{% trans "Odebrat" %} ' + email);
             btn.addEventListener('click', function() {
               setEmails(getEmails().filter(function(e){ return e !== this.getAttribute('data-email'); }.bind(this)));
               renderChips();
@@ -163,7 +164,7 @@
 
         window.watcherAdd = function() {
           var val = input.value.trim().toLowerCase();
-          if (!val || val.indexOf('@') === -1) return;
+          if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return;
           var emails = getEmails();
           if (emails.indexOf(val) === -1) {
             emails.push(val);
