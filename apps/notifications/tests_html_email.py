@@ -69,7 +69,7 @@ class SendInfrastructureTest(TestCase):
         from apps.notifications.email import _send
         _send(
             subject='Test fallback',
-            template='emails/assigned_to_you.txt',  # nemá HTML protějšek
+            template='emails/test_fallback_only.txt',  # nemá HTML protějšek
             context={},
             recipients=['fallback@test.cz'],
         )
@@ -250,3 +250,42 @@ class TicketClosedHtmlTest(TestCase):
 
     def test_reply_token_present(self):
         self.assertIn(f'[#{self.ticket.pk}#]', self._html('resolved'))
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    SITE_URL='http://testserver',
+    DEFAULT_FROM_EMAIL='helpdesk@test.cz',
+)
+class AssignedToYouHtmlTest(TestCase):
+
+    def setUp(self):
+        self.company, self.requester, self.ticket = _make_fixtures()
+        self.resolver = User.objects.create_user(
+            username='resolver', email='resolver@test.cz', password='x'
+        )
+        UserRole.objects.create(user=self.resolver, role=UserRole.RESOLVER)
+
+    def _html(self):
+        from apps.notifications.email import send_assigned_to_you
+        send_assigned_to_you(self.ticket, self.resolver)
+        for content, mime in getattr(mail.outbox[-1], 'alternatives', []):
+            if mime == 'text/html':
+                return content
+        return None
+
+    def test_contains_ticket_title(self):
+        self.assertIn('Testovací tiket', self._html())
+
+    def test_contains_ticket_type(self):
+        self.assertIn('Podpora', self._html())
+
+    def test_contains_priority(self):
+        self.assertIn('Střední', self._html())
+
+    def test_contains_clickable_url(self):
+        html = self._html()
+        self.assertIn(f'/tickets/{self.ticket.pk}/', html)
+
+    def test_contains_reply_token(self):
+        self.assertIn(f'[#{self.ticket.pk}#]', self._html())
