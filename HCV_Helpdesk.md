@@ -540,6 +540,10 @@ vytvoření sestupně. Řazení je zachováno při filtrování i stránkování
 Všichni uživatelé mohou filtrovat podle: Stav, Typ, Oblast, Priorita,
 a textového vyhledávání v názvu a popisu.
 
+Filtr Stav nabízí kromě jednotlivých stavů také skupinové hodnoty:
+„— otevřené —" (Nový, Příprava nabídky, Řeší se) a „— zavřené —"
+(Vyřešeno, Zamítnuto).
+
 Filtr data vytvoření funguje jako rozsah: pole „Vytvořeno od" omezuje
 výsledky na tikety vytvořené v daný den nebo později, pole „Vytvořeno do"
 na tikety vytvořené v daný den nebo dříve. Obě pole jsou volitelná
@@ -549,6 +553,10 @@ najednou pro přesný rozsah.
 Řešitel, správce a administrátor mohou navíc filtrovat podle: Firma.
 
 Správce a administrátor mohou navíc filtrovat podle: Žadatel, Řešitel.
+
+Filtry Řešitel a Žadatel zobrazují pouze uživatele, kteří figurují
+na tiketech viditelných přihlášenému uživateli — ne všechny uživatele
+se stejnou rolí v systému.
 
 ### Export do Excelu
 
