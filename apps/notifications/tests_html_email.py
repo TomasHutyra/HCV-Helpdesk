@@ -200,3 +200,53 @@ class NewCommentHtmlTest(TestCase):
 
     def test_contains_reply_token(self):
         self.assertIn(f'[#{self.ticket.pk}#]', self._html())
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    SITE_URL='http://testserver',
+    DEFAULT_FROM_EMAIL='helpdesk@test.cz',
+)
+class TicketClosedHtmlTest(TestCase):
+
+    def setUp(self):
+        from apps.tickets.models import Ticket as T
+        self.company, self.requester, self.ticket = _make_fixtures()
+        T.objects.filter(pk=self.ticket.pk).update(
+            status=T.STATUS_RESOLVED,
+            resolution_notes='Problém byl vyřešen restartováním.',
+        )
+        self.ticket = T.objects.get(pk=self.ticket.pk)
+
+    def _html(self, closed_as='resolved'):
+        from apps.notifications.email import send_ticket_closed
+        send_ticket_closed(self.ticket, closed_as=closed_as)
+        # send_ticket_closed also calls send_rating_request — skip rating email
+        for msg in mail.outbox:
+            for content, mime in getattr(msg, 'alternatives', []):
+                if mime == 'text/html' and 'Ohodno' not in content:
+                    return content
+        return None
+
+    def test_resolved_contains_title(self):
+        self.assertIn('Testovací tiket', self._html('resolved'))
+
+    def test_resolved_contains_resolution_notes(self):
+        self.assertIn('Problém byl vyřešen restartováním.', self._html('resolved'))
+
+    def test_resolved_contains_url(self):
+        html = self._html('resolved')
+        self.assertIn(f'/tickets/{self.ticket.pk}/', html)
+
+    def test_rejected_contains_rejection_reason(self):
+        from apps.tickets.models import Ticket as T
+        T.objects.filter(pk=self.ticket.pk).update(
+            status=T.STATUS_REJECTED,
+            rejection_reason='Mimo rozsah smlouvy.',
+        )
+        self.ticket = T.objects.get(pk=self.ticket.pk)
+        html = self._html('rejected')
+        self.assertIn('Mimo rozsah smlouvy.', html)
+
+    def test_reply_token_present(self):
+        self.assertIn(f'[#{self.ticket.pk}#]', self._html('resolved'))

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;">
+
+        <!-- Pruh — zelený pro vyřešeno, červený pro zamítnutí -->
+        {% if closed_as == 'resolved' %}
+        <tr><td style="height:4px;background:#16a34a;font-size:0;line-height:0;">&nbsp;</td></tr>
+        {% else %}
+        <tr><td style="height:4px;background:#dc2626;font-size:0;line-height:0;">&nbsp;</td></tr>
+        {% endif %}
+
+        <!-- Záhlaví -->
+        <tr>
+          <td style="padding:20px 24px 16px;border-bottom:1px solid #f3f4f6;">
+            <table cellpadding="0" cellspacing="0"><tr>
+              {% if closed_as == 'resolved' %}
+              <td style="width:38px;height:38px;background:#f0fdf4;border-radius:10px;text-align:center;vertical-align:middle;font-size:18px;line-height:38px;">✓</td>
+              {% else %}
+              <td style="width:38px;height:38px;background:#fef2f2;border-radius:10px;text-align:center;vertical-align:middle;font-size:16px;line-height:38px;color:#dc2626;font-weight:700;">✗</td>
+              {% endif %}
+              <td style="padding-left:12px;vertical-align:top;">
+                <p style="margin:0 0 3px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.7px;">HCV Helpdesk</p>
+                {% if closed_as == 'resolved' %}
+                <p style="margin:0;font-size:16px;font-weight:700;color:#111827;">Tiket byl vyřešen</p>
+                {% else %}
+                <p style="margin:0;font-size:16px;font-weight:700;color:#111827;">Tiket byl zamítnut</p>
+                {% endif %}
+              </td>
+            </tr></table>
+          </td>
+        </tr>
+
+        <!-- ID + název -->
+        <tr>
+          <td style="padding:14px 24px 0;">
+            <p style="margin:0 0 2px;font-size:11px;color:#9ca3af;">Tiket #{{ ticket.pk }}</p>
+            <p style="margin:0;font-size:15px;font-weight:600;color:#111827;line-height:1.4;">{{ ticket.title }}</p>
+          </td>
+        </tr>
+
+        <!-- Tělo -->
+        <tr>
+          <td style="padding:14px 24px 20px;">
+
+            {% if closed_as == 'resolved' %}
+            <!-- Způsob vyřešení -->
+            <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+              <tr>
+                <td style="background:#f0fdf4;border-left:3px solid #86efac;border-radius:8px;padding:13px 15px;">
+                  <p style="margin:0 0 5px;font-size:11px;color:#16a34a;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Způsob vyřešení</p>
+                  <p style="margin:0;font-size:13px;color:#374151;line-height:1.7;">{{ ticket.resolution_notes|linebreaksbr }}</p>
+                </td>
+              </tr>
+            </table>
+            {% else %}
+            <!-- Důvod zamítnutí -->
+            <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+              <tr>
+                <td style="background:#fef2f2;border-left:3px solid #fca5a5;border-radius:8px;padding:13px 15px;">
+                  <p style="margin:0 0 5px;font-size:11px;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Důvod zamítnutí</p>
+                  <p style="margin:0;font-size:13px;color:#374151;line-height:1.7;">{{ ticket.rejection_reason|linebreaksbr }}</p>
+                </td>
+              </tr>
+            </table>
+            {% endif %}
+
+            <!-- CTA -->
+            {% if ticket_url %}
+            <table cellpadding="0" cellspacing="0" width="100%"><tr>
+              {% if closed_as == 'resolved' %}
+              <td align="center" style="border-radius:8px;background:#16a34a;">
+                <a href="{{ ticket_url }}" style="display:block;padding:12px 24px;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;">Zobrazit tiket →</a>
+              </td>
+              {% else %}
+              <td align="center" style="border-radius:8px;background:#dc2626;">
+                <a href="{{ ticket_url }}" style="display:block;padding:12px 24px;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;">Zobrazit tiket →</a>
+              </td>
+              {% endif %}
+            </tr></table>
+            {% endif %}
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:12px 24px;border-top:1px solid #f3f4f6;background:#fafafa;">
+            <p style="margin:0;font-size:11px;color:#9ca3af;line-height:1.5;">{% if reply_ticket_id %}Odpovědí na tento e-mail přidáte komentář k tiketu #{{ reply_ticket_id }}. [#{{ reply_ticket_id }}#]{% else %}Zpráva odeslána systémem HCV Helpdesk.{% endif %}</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
