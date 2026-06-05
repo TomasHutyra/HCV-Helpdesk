@@ -69,7 +69,7 @@ class SendInfrastructureTest(TestCase):
         from apps.notifications.email import _send
         _send(
             subject='Test fallback',
-            template='emails/new_ticket.txt',  # has no .html yet
+            template='emails/status_change.txt',  # nemá HTML protějšek
             context={},
             recipients=['fallback@test.cz'],
         )
@@ -79,3 +79,43 @@ class SendInfrastructureTest(TestCase):
         alternatives = getattr(msg, 'alternatives', [])
         html_alternatives = [c for c, m in alternatives if m == 'text/html']
         self.assertEqual(len(html_alternatives), 0, 'Neměla by existovat HTML alternativa')
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    SITE_URL='http://testserver',
+    DEFAULT_FROM_EMAIL='helpdesk@test.cz',
+)
+class NewTicketHtmlTest(TestCase):
+
+    def setUp(self):
+        self.company, self.requester, self.ticket = _make_fixtures()
+
+    def _html(self):
+        from apps.notifications.email import send_new_ticket
+        send_new_ticket(self.ticket)
+        for content, mime in getattr(mail.outbox[0], 'alternatives', []):
+            if mime == 'text/html':
+                return content
+        return None
+
+    def test_contains_ticket_title(self):
+        self.assertIn('Testovací tiket', self._html())
+
+    def test_contains_clickable_ticket_url(self):
+        html = self._html()
+        self.assertIn(f'/tickets/{self.ticket.pk}/', html)
+        self.assertIn('<a ', html)
+
+    def test_contains_description(self):
+        self.assertIn('Krátký popis tiketu.', self._html())
+
+    def test_truncates_long_description(self):
+        self.ticket.description = 'B' * 400
+        self.ticket.save()
+        html = self._html()
+        self.assertNotIn('B' * 400, html)
+        self.assertIn('B' * 10, html)
+
+    def test_contains_reply_token(self):
+        self.assertIn(f'[#{self.ticket.pk}#]', self._html())

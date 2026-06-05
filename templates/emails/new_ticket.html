@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;">
+
+        <!-- Pruh -->
+        <tr><td style="height:4px;background:#2563eb;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+        <!-- Záhlaví -->
+        <tr>
+          <td style="padding:20px 24px 16px;border-bottom:1px solid #f3f4f6;">
+            <table cellpadding="0" cellspacing="0"><tr>
+              <td style="width:38px;height:38px;background:#eff6ff;border-radius:10px;text-align:center;vertical-align:middle;font-size:18px;line-height:38px;">🎫</td>
+              <td style="padding-left:12px;vertical-align:top;">
+                <p style="margin:0 0 3px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.7px;">HCV Helpdesk</p>
+                <p style="margin:0;font-size:16px;font-weight:700;color:#111827;">Nový tiket</p>
+              </td>
+            </tr></table>
+          </td>
+        </tr>
+
+        <!-- ID + název -->
+        <tr>
+          <td style="padding:14px 24px 0;">
+            <p style="margin:0 0 2px;font-size:11px;color:#9ca3af;">Tiket #{{ ticket.pk }}</p>
+            <p style="margin:0;font-size:15px;font-weight:600;color:#111827;line-height:1.4;">{{ ticket.title }}</p>
+          </td>
+        </tr>
+
+        <!-- Tělo -->
+        <tr>
+          <td style="padding:14px 24px 20px;">
+
+            <!-- Metadata 2×2 -->
+            <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:14px;">
+              <tr>
+                <td width="50%" style="padding:0 3px 6px 0;">
+                  <table cellpadding="0" cellspacing="0" width="100%"><tr>
+                    <td style="background:#f9fafb;border-radius:7px;padding:8px 11px;">
+                      <p style="margin:0 0 2px;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Typ</p>
+                      <p style="margin:0;font-size:13px;color:#111827;font-weight:600;">{{ ticket.get_type_display }}</p>
+                    </td>
+                  </tr></table>
+                </td>
+                <td width="50%" style="padding:0 0 6px 3px;">
+                  <table cellpadding="0" cellspacing="0" width="100%"><tr>
+                    <td style="background:#f9fafb;border-radius:7px;padding:8px 11px;">
+                      <p style="margin:0 0 2px;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Priorita</p>
+                      <p style="margin:0;font-size:13px;color:#111827;font-weight:600;">{{ ticket.get_priority_display }}</p>
+                    </td>
+                  </tr></table>
+                </td>
+              </tr>
+              <tr>
+                <td width="50%" style="padding:0 3px 0 0;">
+                  <table cellpadding="0" cellspacing="0" width="100%"><tr>
+                    <td style="background:#f9fafb;border-radius:7px;padding:8px 11px;">
+                      <p style="margin:0 0 2px;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Oblast</p>
+                      <p style="margin:0;font-size:13px;color:#111827;font-weight:600;">{{ ticket.area }}</p>
+                    </td>
+                  </tr></table>
+                </td>
+                <td width="50%" style="padding:0 0 0 3px;">
+                  <table cellpadding="0" cellspacing="0" width="100%"><tr>
+                    <td style="background:#f9fafb;border-radius:7px;padding:8px 11px;">
+                      <p style="margin:0 0 2px;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Firma</p>
+                      <p style="margin:0;font-size:13px;color:#111827;font-weight:600;">{{ ticket.company }}</p>
+                    </td>
+                  </tr></table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Popis -->
+            <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+              <tr>
+                <td style="background:#f8faff;border-left:3px solid #93c5fd;border-radius:8px;padding:13px 15px;">
+                  <p style="margin:0 0 5px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Popis</p>
+                  <p style="margin:0;font-size:13px;color:#374151;line-height:1.7;">{{ ticket.description|truncatechars:300|linebreaksbr }}</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA -->
+            {% if ticket_url %}
+            <table cellpadding="0" cellspacing="0" width="100%"><tr>
+              <td align="center" style="border-radius:8px;background:#2563eb;">
+                <a href="{{ ticket_url }}" style="display:block;padding:12px 24px;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;">Zobrazit tiket →</a>
+              </td>
+            </tr></table>
+            {% endif %}
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:12px 24px;border-top:1px solid #f3f4f6;background:#fafafa;">
+            <p style="margin:0;font-size:11px;color:#9ca3af;line-height:1.5;">{% if reply_ticket_id %}Odpovědí na tento e-mail přidáte komentář k tiketu #{{ reply_ticket_id }}. [#{{ reply_ticket_id }}#]{% else %}Zpráva odeslána systémem HCV Helpdesk.{% endif %}</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
