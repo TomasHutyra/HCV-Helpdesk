@@ -5,6 +5,7 @@ Volány z Celery tasků (tasks.py).
 import logging
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, send_mail
+from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.urls import reverse
 
@@ -32,23 +33,27 @@ def _send(subject, template, context, recipients, ticket_id=None, cc=None):
     if not recipients:
         if not cc:
             return
-        # Všichni primární příjemci byli vyřazeni (např. autor = jediný příjemce),
-        # ale CC existuje — povýšíme CC na To, aby notifikace kontaktní osobě dorazila.
         recipients, cc = cc, []
     if ticket_id:
         subject = f'{subject} {_ticket_token(ticket_id)}'
         ticket_url = settings.SITE_URL.rstrip('/') + reverse('tickets:detail', args=[ticket_id])
         context = {**context, 'reply_ticket_id': ticket_id, 'ticket_url': ticket_url}
-    body = render_to_string(template, context)
+    text_body = render_to_string(template, context)
+    html_template = template.replace('.txt', '.html')
     try:
-        from django.core.mail import EmailMessage
-        msg = EmailMessage(
+        html_body = render_to_string(html_template, context)
+    except TemplateDoesNotExist:
+        html_body = None
+    try:
+        msg = EmailMultiAlternatives(
             subject=subject,
-            body=body,
+            body=text_body,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=recipients,
             cc=cc or [],
         )
+        if html_body:
+            msg.attach_alternative(html_body, 'text/html')
         msg.send(fail_silently=False)
         logger.info('E-mail "%s" odeslán na: %s, CC: %s', subject, recipients, cc or [])
     except Exception as exc:
