@@ -51,6 +51,22 @@ def _validate_upload(f):
     return None
 
 
+def _parse_watchers(raw):
+    """Parsuje comma-separated e-maily. Vrátí set platných lower-case e-mailů."""
+    from django.core.validators import validate_email
+    from django.core.exceptions import ValidationError
+    emails = set()
+    for part in raw.split(','):
+        email = part.strip().lower()
+        if email:
+            try:
+                validate_email(email)
+                emails.add(email)
+            except ValidationError:
+                pass
+    return emails
+
+
 def _can_comment(user, ticket):
     """Vrátí True, pokud smí uživatel komentovat tiket.
 
@@ -473,6 +489,7 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         ctx['deletable_attachment_pks'] = {
             att.pk for att in attachments if _can_delete_attachment(user, att)
         }
+        ctx['watchers'] = ticket.ticket_watchers.all()
         return ctx
 
 
@@ -485,6 +502,16 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
+
+    def get_context_data(self, **kwargs):
+        from apps.accounts.models import User as AccountUser
+        ctx = super().get_context_data(**kwargs)
+        ctx['show_watchers_field'] = True
+        ctx['initial_watchers'] = ''
+        ctx['watcher_user_options'] = AccountUser.objects.filter(
+            is_active=True
+        ).order_by('last_name', 'first_name')
+        return ctx
 
     def form_valid(self, form):
         ticket = form.save(commit=False)
@@ -520,6 +547,17 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
             _log_change(ticket, self.request.user, TicketChange.FIELD_ATTACHMENT_ADDED,
                         new_value=f.name)
 
+        # Sledující
+        from apps.accounts.models import User as AccountUser
+        from .models import TicketWatcher
+        raw_watchers = self.request.POST.get('watchers', '')
+        for email in _parse_watchers(raw_watchers):
+            user_match = AccountUser.objects.filter(email__iexact=email).first()
+            TicketWatcher.objects.get_or_create(
+                ticket=ticket, email=email,
+                defaults={'name': user_match.get_full_name() if user_match else ''},
+            )
+
         from apps.notifications.tasks import notify_new_ticket
         notify_new_ticket.delay(ticket.pk)
         messages.success(self.request, _('Tiket byl vytvořen.'))
@@ -530,6 +568,19 @@ class TicketUpdateView(LoginRequiredMixin, UpdateView):
     model = Ticket
     form_class = TicketUpdateForm
     template_name = 'tickets/ticket_form.html'
+
+    def get_context_data(self, **kwargs):
+        from apps.accounts.models import User as AccountUser
+        ctx = super().get_context_data(**kwargs)
+        ctx['show_watchers_field'] = True
+        existing = ','.join(
+            self.object.ticket_watchers.values_list('email', flat=True)
+        )
+        ctx['initial_watchers'] = existing
+        ctx['watcher_user_options'] = AccountUser.objects.filter(
+            is_active=True
+        ).order_by('last_name', 'first_name')
+        return ctx
 
     def dispatch(self, request, *args, **kwargs):
         ticket = get_object_or_404(Ticket, pk=kwargs['pk'])
@@ -590,6 +641,20 @@ class TicketUpdateView(LoginRequiredMixin, UpdateView):
             _log_change(ticket, user, TicketChange.FIELD_CONTACT_PERSON,
                         _fmt_contact(old_contact_name, old_contact_email),
                         _fmt_contact(ticket.contact_person_name, ticket.contact_person_email))
+
+        # Sledující — sync
+        from apps.accounts.models import User as AccountUser
+        from .models import TicketWatcher
+        raw_watchers = self.request.POST.get('watchers', '')
+        new_emails = _parse_watchers(raw_watchers)
+        ticket.ticket_watchers.exclude(email__in=new_emails).delete()
+        for email in new_emails:
+            if not ticket.ticket_watchers.filter(email=email).exists():
+                user_match = AccountUser.objects.filter(email__iexact=email).first()
+                TicketWatcher.objects.create(
+                    ticket=ticket, email=email,
+                    name=user_match.get_full_name() if user_match else '',
+                )
 
         messages.success(self.request, _('Tiket byl uložen.'))
         return redirect('tickets:detail', pk=ticket.pk)

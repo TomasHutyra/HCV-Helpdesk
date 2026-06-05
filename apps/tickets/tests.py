@@ -198,3 +198,37 @@ class TicketWatcherModelTest(TestCase):
     def test_ticket_watchers_relation(self):
         TicketWatcher.objects.create(ticket=self.ticket, email='x@y.cz')
         self.assertEqual(self.ticket.ticket_watchers.count(), 1)
+
+
+from apps.tickets.views import _parse_watchers
+
+
+class ParseWatchersTest(TestCase):
+
+    def test_single_valid_email(self):
+        self.assertEqual(_parse_watchers('jan@firma.cz'), {'jan@firma.cz'})
+
+    def test_multiple_emails_comma_separated(self):
+        result = _parse_watchers('jan@firma.cz,eva@ext.cz')
+        self.assertEqual(result, {'jan@firma.cz', 'eva@ext.cz'})
+
+    def test_whitespace_trimmed(self):
+        result = _parse_watchers(' jan@firma.cz , eva@ext.cz ')
+        self.assertIn('jan@firma.cz', result)
+        self.assertIn('eva@ext.cz', result)
+
+    def test_invalid_email_ignored(self):
+        result = _parse_watchers('neni-email, jan@firma.cz')
+        self.assertNotIn('neni-email', result)
+        self.assertIn('jan@firma.cz', result)
+
+    def test_empty_string_returns_empty_set(self):
+        self.assertEqual(_parse_watchers(''), set())
+
+    def test_duplicates_deduplicated(self):
+        result = _parse_watchers('jan@firma.cz,jan@firma.cz')
+        self.assertEqual(result, {'jan@firma.cz'})
+
+    def test_lowercased(self):
+        result = _parse_watchers('JAN@FIRMA.CZ')
+        self.assertIn('jan@firma.cz', result)
