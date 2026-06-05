@@ -119,3 +119,50 @@ class NewTicketHtmlTest(TestCase):
 
     def test_contains_reply_token(self):
         self.assertIn(f'[#{self.ticket.pk}#]', self._html())
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    SITE_URL='http://testserver',
+    DEFAULT_FROM_EMAIL='helpdesk@test.cz',
+)
+class NewCommentHtmlTest(TestCase):
+
+    def setUp(self):
+        from apps.tickets.models import Comment
+        self.company, self.requester, self.ticket = _make_fixtures()
+        self.resolver = User.objects.create_user(
+            username='resolver', email='resolver@test.cz', password='x'
+        )
+        UserRole.objects.create(user=self.resolver, role=UserRole.RESOLVER)
+        self.comment = Comment.objects.create(
+            ticket=self.ticket,
+            author=self.resolver,
+            body='Komentář od řešitele.',
+        )
+
+    def _html(self):
+        from apps.notifications.email import send_new_comment
+        send_new_comment(self.comment)
+        for msg in mail.outbox:
+            for content, mime in getattr(msg, 'alternatives', []):
+                if mime == 'text/html':
+                    return content
+        return None
+
+    def test_contains_ticket_title(self):
+        self.assertIn('Testovací tiket', self._html())
+
+    def test_contains_comment_body(self):
+        self.assertIn('Komentář od řešitele.', self._html())
+
+    def test_contains_author_name(self):
+        self.assertIn('resolver', self._html())
+
+    def test_contains_clickable_ticket_url(self):
+        html = self._html()
+        self.assertIn(f'/tickets/{self.ticket.pk}/', html)
+        self.assertIn('<a ', html)
+
+    def test_contains_reply_token(self):
+        self.assertIn(f'[#{self.ticket.pk}#]', self._html())
