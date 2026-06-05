@@ -69,7 +69,7 @@ class SendInfrastructureTest(TestCase):
         from apps.notifications.email import _send
         _send(
             subject='Test fallback',
-            template='emails/status_change.txt',  # nemá HTML protějšek
+            template='emails/assigned_to_you.txt',  # nemá HTML protějšek
             context={},
             recipients=['fallback@test.cz'],
         )
@@ -116,6 +116,41 @@ class NewTicketHtmlTest(TestCase):
         html = self._html()
         self.assertNotIn('B' * 400, html)
         self.assertIn('B' * 10, html)
+
+    def test_contains_reply_token(self):
+        self.assertIn(f'[#{self.ticket.pk}#]', self._html())
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    SITE_URL='http://testserver',
+    DEFAULT_FROM_EMAIL='helpdesk@test.cz',
+)
+class StatusChangeHtmlTest(TestCase):
+
+    def setUp(self):
+        from apps.tickets.models import Ticket as T
+        self.company, self.requester, self.ticket = _make_fixtures()
+        T.objects.filter(pk=self.ticket.pk).update(status=T.STATUS_IN_PROGRESS)
+        self.ticket = T.objects.get(pk=self.ticket.pk)
+
+    def _html(self):
+        from apps.notifications.email import send_status_change
+        send_status_change(self.ticket)
+        for content, mime in getattr(mail.outbox[-1], 'alternatives', []):
+            if mime == 'text/html':
+                return content
+        return None
+
+    def test_contains_ticket_title(self):
+        self.assertIn('Testovací tiket', self._html())
+
+    def test_contains_new_status(self):
+        self.assertIn('Řeší se', self._html())
+
+    def test_contains_clickable_url(self):
+        html = self._html()
+        self.assertIn(f'/tickets/{self.ticket.pk}/', html)
 
     def test_contains_reply_token(self):
         self.assertIn(f'[#{self.ticket.pk}#]', self._html())
