@@ -168,3 +168,33 @@ class MultiRoleCommentTest(TestCase):
         ticket = _ticket(dual, self.co, area=self.area)
 
         self.assertTrue(_can_add_attachment(dual, ticket))
+
+
+from apps.tickets.models import TicketWatcher
+
+class TicketWatcherModelTest(TestCase):
+
+    def setUp(self):
+        self.co = _company()
+        self.area = _area()
+        self.requester = _user('req', UserRole.REQUESTER, company=self.co)
+        self.ticket = _ticket(self.requester, self.co)
+
+    def test_watcher_created_with_email(self):
+        w = TicketWatcher.objects.create(ticket=self.ticket, email='watcher@ext.cz')
+        self.assertEqual(w.email, 'watcher@ext.cz')
+        self.assertEqual(str(w), 'watcher@ext.cz')
+
+    def test_watcher_with_name_str(self):
+        w = TicketWatcher.objects.create(ticket=self.ticket, email='jan@firm.cz', name='Jan Novák')
+        self.assertEqual(str(w), 'Jan Novák')
+
+    def test_unique_email_per_ticket(self):
+        from django.db import IntegrityError
+        TicketWatcher.objects.create(ticket=self.ticket, email='a@b.cz')
+        with self.assertRaises(IntegrityError):
+            TicketWatcher.objects.create(ticket=self.ticket, email='a@b.cz')
+
+    def test_ticket_watchers_relation(self):
+        TicketWatcher.objects.create(ticket=self.ticket, email='x@y.cz')
+        self.assertEqual(self.ticket.ticket_watchers.count(), 1)

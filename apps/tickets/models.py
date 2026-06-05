@@ -402,3 +402,21 @@ class TicketAttachment(models.Model):
         if size < 1024 * 1024:
             return f'{size / 1024:.0f} KB'
         return f'{size / 1024 / 1024:.1f} MB'
+
+
+class TicketWatcher(models.Model):
+    ticket = models.ForeignKey(
+        Ticket, on_delete=models.CASCADE,
+        related_name='ticket_watchers', verbose_name=_('tiket'),
+    )
+    email = models.EmailField(_('e-mail'))
+    name = models.CharField(_('jméno'), max_length=200, blank=True)
+
+    class Meta:
+        verbose_name = _('sledující')
+        verbose_name_plural = _('sledující')
+        unique_together = [('ticket', 'email')]
+        ordering = ['name', 'email']
+
+    def __str__(self):
+        return self.name or self.email
