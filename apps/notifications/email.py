@@ -3,6 +3,7 @@ Funkce pro odesílání e-mailových notifikací.
 Volány z Celery tasků (tasks.py).
 """
 import logging
+import os
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, send_mail
 from django.template.exceptions import TemplateDoesNotExist
@@ -39,7 +40,8 @@ def _send(subject, template, context, recipients, ticket_id=None, cc=None):
         ticket_url = settings.SITE_URL.rstrip('/') + reverse('tickets:detail', args=[ticket_id])
         context = {**context, 'reply_ticket_id': ticket_id, 'ticket_url': ticket_url}
     text_body = render_to_string(template, context)
-    html_template = template.replace('.txt', '.html')
+    base, _ = os.path.splitext(template)
+    html_template = base + '.html'
     try:
         html_body = render_to_string(html_template, context)
     except TemplateDoesNotExist:

@@ -63,3 +63,19 @@ class SendInfrastructureTest(TestCase):
         send_new_ticket(ticket)
         msg = mail.outbox[0]
         self.assertTrue(msg.body, 'Plain-text body je prázdné')
+
+    def test_send_falls_back_to_plain_text_when_no_html_template(self):
+        """Pokud HTML šablona neexistuje, odešle se e-mail jen v plain textu."""
+        from apps.notifications.email import _send
+        _send(
+            subject='Test fallback',
+            template='emails/new_ticket.txt',  # has no .html yet
+            context={},
+            recipients=['fallback@test.cz'],
+        )
+        self.assertGreater(len(mail.outbox), 0)
+        msg = mail.outbox[0]
+        self.assertTrue(msg.body)
+        alternatives = getattr(msg, 'alternatives', [])
+        html_alternatives = [c for c, m in alternatives if m == 'text/html']
+        self.assertEqual(len(html_alternatives), 0, 'Neměla by existovat HTML alternativa')
