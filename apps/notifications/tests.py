@@ -4,7 +4,7 @@ Testy pro notifikace — fokus na _get_notifiable_resolvers().
 Spuštění:
     python manage.py test apps.notifications.tests --settings=helpdesk.settings.local
 """
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from apps.accounts.models import Company, User, UserRole
 from apps.notifications.email import _get_notifiable_resolvers
@@ -165,3 +165,79 @@ class GetNotifiableResolversTest(TestCase):
         _make_resolver('r1', 'r1@test.cz', notify=True, areas=[], active=False)
         ticket = _make_ticket(self.requester, self.company, area=self.area_it)
         self.assertNotIn('r1@test.cz', _get_notifiable_resolvers(ticket))
+
+
+from apps.notifications.email import (  # noqa: E402
+    _get_watcher_emails, send_new_ticket, send_status_change,
+    send_new_comment, send_ticket_closed,
+)
+from apps.tickets.models import Comment, TicketWatcher  # noqa: E402
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    SITE_URL='http://localhost:8000',
+    CELERY_TASK_ALWAYS_EAGER=True,
+)
+class WatcherNotificationTest(TestCase):
+
+    def setUp(self):
+        from django.core import mail
+        mail.outbox = []
+        self.company = _make_company()
+        self.requester = _make_requester(self.company)
+        self.ticket = _make_ticket(self.requester, self.company)
+        TicketWatcher.objects.create(ticket=self.ticket, email='watcher@ext.cz', name='Watcher')
+
+    def test_get_watcher_emails_returns_list(self):
+        emails = _get_watcher_emails(self.ticket)
+        self.assertIn('watcher@ext.cz', emails)
+
+    def test_get_watcher_emails_empty_when_none(self):
+        self.ticket.ticket_watchers.all().delete()
+        self.assertEqual(_get_watcher_emails(self.ticket), [])
+
+    def test_send_new_ticket_includes_watcher(self):
+        from django.core import mail
+        send_new_ticket(self.ticket)
+        all_recipients = []
+        for m in mail.outbox:
+            all_recipients += m.to + m.cc
+        self.assertIn('watcher@ext.cz', all_recipients)
+
+    def test_send_status_change_includes_watcher(self):
+        from django.core import mail
+        send_status_change(self.ticket)
+        all_recipients = []
+        for m in mail.outbox:
+            all_recipients += m.to + m.cc
+        self.assertIn('watcher@ext.cz', all_recipients)
+
+    def test_send_ticket_closed_includes_watcher(self):
+        from django.core import mail
+        send_ticket_closed(self.ticket, 'resolved')
+        all_recipients = []
+        for m in mail.outbox:
+            all_recipients += m.to + m.cc
+        self.assertIn('watcher@ext.cz', all_recipients)
+
+    def test_send_new_comment_includes_watcher(self):
+        from django.core import mail
+        author = _make_resolver('author', 'author@test.cz', notify=False)
+        comment = Comment.objects.create(ticket=self.ticket, author=author, body='Ahoj')
+        send_new_comment(comment)
+        all_recipients = []
+        for m in mail.outbox:
+            all_recipients += m.to + m.cc
+        self.assertIn('watcher@ext.cz', all_recipients)
+
+    def test_watcher_excluded_from_comment_if_author(self):
+        """Sledující, který napsal komentář, nedostane e-mail sám sobě."""
+        from django.core import mail
+        author = User.objects.create_user(username='wauth', email='watcher@ext.cz', password='x')
+        comment = Comment.objects.create(ticket=self.ticket, author=author, body='Píšu já')
+        send_new_comment(comment)
+        all_recipients = []
+        for m in mail.outbox:
+            all_recipients += m.to + m.cc
+        self.assertNotIn('watcher@ext.cz', all_recipients)

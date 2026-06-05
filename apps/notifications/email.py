@@ -25,6 +25,11 @@ def _cc_emails(ticket):
     return []
 
 
+def _get_watcher_emails(ticket):
+    """Vrátí seznam e-mailů sledujících tiketu."""
+    return list(ticket.ticket_watchers.values_list('email', flat=True))
+
+
 def _ticket_token(ticket_id):
     return f'[#{ticket_id}#]'
 
@@ -89,10 +94,11 @@ def _get_notifiable_resolvers(ticket):
 
 
 def send_new_ticket(ticket):
-    """Nový tiket → žadateli + oprávněným správcům + přihlášeným řešitelům."""
+    """Nový tiket → žadateli + oprávněným správcům + přihlášeným řešitelům + sledujícím."""
     managers = _get_notifiable_managers(ticket)
     resolvers = _get_notifiable_resolvers(ticket)
-    recipients = list({ticket.requester.email} | set(managers) | set(resolvers))
+    watchers = _get_watcher_emails(ticket)
+    recipients = list({ticket.requester.email} | set(managers) | set(resolvers) | set(watchers))
     recipients_set = set(recipients)
 
     _send(
@@ -106,26 +112,29 @@ def send_new_ticket(ticket):
 
 
 def send_status_change(ticket):
-    """Změna stavu na Řeší se nebo Příprava nabídky → žadateli."""
-    recipients = [ticket.requester.email]
+    """Změna stavu na Řeší se nebo Příprava nabídky → žadateli + sledujícím."""
+    recipients_set = {ticket.requester.email}
+    recipients_set.update(_get_watcher_emails(ticket))
+    recipients = list(recipients_set)
     _send(
         subject=f'[HCV Helpdesk] Stav tiketu #{ticket.pk} změněn: {ticket.get_status_display()}',
         template='emails/status_change.txt',
         context={'ticket': ticket},
         recipients=recipients,
         ticket_id=ticket.pk,
-        cc=[e for e in _cc_emails(ticket) if e not in recipients],
+        cc=[e for e in _cc_emails(ticket) if e not in recipients_set],
     )
 
 
 def send_new_comment(comment):
-    """Nový komentář → všem přiřazeným osobám (kromě autora komentáře)."""
+    """Nový komentář → všem přiřazeným osobám + sledujícím (kromě autora komentáře)."""
     ticket = comment.ticket
     recipients_set = {ticket.requester.email}
     if ticket.resolver:
         recipients_set.add(ticket.resolver.email)
     if ticket.sales:
         recipients_set.add(ticket.sales.email)
+    recipients_set.update(_get_watcher_emails(ticket))
     recipients_set.discard(comment.author.email)
 
     cc = [e for e in _cc_emails(ticket) if e not in recipients_set and e != comment.author.email]
@@ -151,15 +160,17 @@ def send_assigned_to_you(ticket, assignee):
 
 
 def send_ticket_closed(ticket, closed_as):
-    """Vyřešení nebo zamítnutí → žadateli."""
-    recipients = [ticket.requester.email]
+    """Vyřešení nebo zamítnutí → žadateli + sledujícím."""
+    recipients_set = {ticket.requester.email}
+    recipients_set.update(_get_watcher_emails(ticket))
+    recipients = list(recipients_set)
     _send(
         subject=_sanitize_subject(f'[HCV Helpdesk] Tiket #{ticket.pk} {ticket.get_status_display()}: {ticket.title}'),
         template='emails/ticket_closed.txt',
         context={'ticket': ticket, 'closed_as': closed_as},
         recipients=recipients,
         ticket_id=ticket.pk,
-        cc=[e for e in _cc_emails(ticket) if e not in recipients],
+        cc=[e for e in _cc_emails(ticket) if e not in recipients_set],
     )
     if closed_as == 'resolved':
         send_rating_request(ticket)
