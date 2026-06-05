@@ -39,8 +39,8 @@ def _make_fixtures():
 class SendInfrastructureTest(TestCase):
     """Testy, že _send() připojí HTML alternativu pokud šablona existuje."""
 
-    def _html_body(self, index=0):
-        msg = mail.outbox[index]
+    def _html_body(self):
+        msg = mail.outbox[-1]
         for content, mime in getattr(msg, 'alternatives', []):
             if mime == 'text/html':
                 return content
@@ -94,7 +94,7 @@ class NewTicketHtmlTest(TestCase):
     def _html(self):
         from apps.notifications.email import send_new_ticket
         send_new_ticket(self.ticket)
-        for content, mime in getattr(mail.outbox[0], 'alternatives', []):
+        for content, mime in getattr(mail.outbox[-1], 'alternatives', []):
             if mime == 'text/html':
                 return content
         return None
