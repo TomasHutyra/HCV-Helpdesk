@@ -508,9 +508,10 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
         ctx = super().get_context_data(**kwargs)
         ctx['show_watchers_field'] = True
         ctx['initial_watchers'] = ''
+        user_company = self.request.user.company
         ctx['watcher_user_options'] = AccountUser.objects.filter(
-            is_active=True
-        ).order_by('last_name', 'first_name')
+            is_active=True, company=user_company,
+        ).order_by('last_name', 'first_name') if user_company else AccountUser.objects.none()
         return ctx
 
     def form_valid(self, form):
@@ -578,7 +579,7 @@ class TicketUpdateView(LoginRequiredMixin, UpdateView):
         )
         ctx['initial_watchers'] = existing
         ctx['watcher_user_options'] = AccountUser.objects.filter(
-            is_active=True
+            is_active=True, company=self.object.company,
         ).order_by('last_name', 'first_name')
         return ctx
 
