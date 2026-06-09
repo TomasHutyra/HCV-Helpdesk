@@ -97,6 +97,9 @@ _OUTLOOK_HEADER_RE = re.compile(
 )
 # Zachytí Outlook reply header ve formátu "From: ...\nSent: ..." (EN, CZ, FR, NL).
 
+_HTML_DOC_RE = re.compile(r'<(?:!DOCTYPE\s+html|html[\s>])', re.IGNORECASE)
+# Zachytí začátek HTML dokumentu v plain-text těle (Outlook for Mac vkládá HTML zdroj citované zprávy).
+
 
 def _strip_quoted_text(body):
     """Odstraní citovaný text z odpovědi, ponechá pouze nový obsah."""
@@ -106,6 +109,7 @@ def _strip_quoted_text(body):
         _QUOTE_HEADER_RE,
         _ORIGINAL_MSG_RE,
         _OUTLOOK_HEADER_RE,
+        _HTML_DOC_RE,
     ):
         m = pattern.search(body)
         if m:
