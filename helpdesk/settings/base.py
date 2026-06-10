@@ -78,6 +78,9 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/tickets/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
+# Reset hesla — platnost odkazu 1 den (v sekundách)
+PASSWORD_RESET_TIMEOUT = 86400
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
