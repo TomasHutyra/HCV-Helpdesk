@@ -100,7 +100,7 @@ HCV_Helpdesk/
 │
 ├── templates/              # Všechny HTML šablony (globální adresář)
 │   ├── base.html           # Základní layout (sidebar, topbar)
-│   ├── accounts/           # Šablony pro uživatele, firmy, oblasti
+│   ├── accounts/           # Šablony pro uživatele, firmy, oblasti (vč. login + password reset)
 │   ├── tickets/            # Šablony pro tikety
 │   │   └── partials/       # HTMX partials (komentáře, přílohy, časové záznamy, …)
 │   └── stats/              # Šablony pro dashboard
@@ -293,6 +293,7 @@ Obsahuje vše, co se nemění mezi prostředími:
 - IMAP konfigurace — načítaná z `.env`
 - Cache: výchozí `LocMemCache` (production přepíše na Redis)
 - `IMAP_RATE_LIMIT = 10` (tikety/hod na odesílatele)
+- `PASSWORD_RESET_TIMEOUT = 86400` (platnost odkazu pro reset hesla — 1 den v sekundách)
 - Celery: broker, backend, plán (`CELERY_BEAT_SCHEDULE`)
 
 ### `local.py` — lokální vývoj

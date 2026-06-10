@@ -223,6 +223,22 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
 ⁶ Rozsah viditelnosti žadatele nastavuje administrátor per-uživatel: (a) pouze vlastní tikety, (b) všechny tikety firmy, (c) tikety firmy v konkrétních oblastech (vlastní tikety jsou vždy viditelné). Právo komentovat má žadatel vždy jen u tiketů, které sám založil.
 
+## Autentizace
+
+### Přihlášení
+
+Uživatelé se přihlašují přes standardní přihlašovací stránku pomocí uživatelského jména a hesla.
+
+### Obnova hesla
+
+Uživatelé mohou obnovit zapomenuté heslo přes e-mail:
+
+1. Na přihlašovací stránce kliknou na odkaz **Zapomněli jste heslo?**
+2. Zadají svůj e-mail — systém zašle e-mail s odkazem pro nastavení nového hesla
+3. Odkaz v e-mailu je platný **1 den**; po kliknutí uživatel zadá nové heslo
+
+E-mail je odesílán ve dvou formátech (plain text + HTML alternativa s tlačítkem). Pokud zadaná e-mailová adresa v systému neexistuje, systém neodhalí tuto skutečnost — odpověď je vždy stejná (ochrana před výčtem e-mailů).
+
 ## Požadavky
 
 Požadavky zakládá žadatel a musí vyplnit
