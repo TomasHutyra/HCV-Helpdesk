@@ -52,6 +52,10 @@
         <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top:4px">
           {% trans "Přihlásit se" %}
         </button>
+
+        <p style="margin-top:16px;text-align:center;font-size:13px;color:#6b7280;">
+          <a href="{% url 'accounts:password_reset' %}" style="color:#2563eb;text-decoration:none;">{% trans "Zapomněli jste heslo?" %}</a>
+        </p>
       </form>
     </div>
   </div>
