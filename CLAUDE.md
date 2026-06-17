@@ -83,7 +83,7 @@ This repository currently contains only the specification. No tech stack has bee
 
 **Type change rules:** Ticket stays in its current state after a type change; if the new type doesn't have that state, reset to `Nový`.
 
-**Locked states:** `Vyřešeno` and `Zamítnuto` are read-only except for moving back to `Řeší se` or `Příprava nabídky`.
+**Locked states:** `Vyřešeno` and `Zamítnuto` are read-only except for reopening. Manager can reopen to `Řeší se` or `Příprava nabídky`; assigned resolver can reopen to `Řeší se` only.
 
 **Resolution** requires: resolution notes + time spent. **Rejection** requires: rejection reason.
 

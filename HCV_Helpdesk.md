@@ -196,7 +196,7 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 | Přiřadit obchodníka | — | — | — | ✓ ¹ | — |
 | Vyřešit tiket | — | přiřazený | — | ✓ ¹ | — |
 | Zamítnout tiket | — | — | — | ✓ ¹ | — |
-| Znovu otevřít tiket | — | — | — | ✓ ¹ | — |
+| Znovu otevřít tiket | — | přiřazený ⁷ | — | ✓ ¹ | — |
 | **Statistiky** | | | | | |
 | Vidí vlastní statistiky | — | ✓ | — | — | — |
 | Vidí statistiky všech uživatelů a firem | — | — | — | ✓ ¹ | — |
@@ -219,7 +219,9 @@ Uživatelé mohou mít následující role (jeden uživatel může mít více ro
 
 ⁴ Řešitel vidí (a může převzít) nové tikety v rámci svých oblastí (nebo všechny, pokud nemá omezení), ale komentovat je může až po přiřazení. Přiřazené tikety vidí vždy bez ohledu na oblast. Převzít lze i tiket ve stavu „Řeší se" — v takovém případě se změní pouze přiřazený řešitel, stav zůstane. Pokud má uživatel zároveň roli Žadatel, vidí navíc i tikety, které sám založil (pravidla obou rolí se sčítají).
 
-⁵ Žadatel může komentovat vlastní tiket i ve stavu „Vyřešeno" nebo „Zamítnuto" (může nesouhlasit s uzavřením). Řešitel a obchodník komentovat uzavřený tiket nemohou. Správce uzavřený tiket komentovat může (může reagovat nebo tiket znovu otevřít).
+⁵ Žadatel může komentovat vlastní tiket i ve stavu „Vyřešeno" nebo „Zamítnuto" (může nesouhlasit s uzavřením). Řešitel a obchodník komentovat uzavřený tiket nemohou. Správce uzavřený tiket komentovat může. Znovu otevřít tiket může správce nebo přiřazený řešitel (viz ⁷).
+
+⁷ Přiřazený řešitel může znovu otevřít tiket pouze do stavu „Řeší se" (ne „Příprava nabídky").
 
 ⁶ Rozsah viditelnosti žadatele nastavuje administrátor per-uživatel: (a) pouze vlastní tikety, (b) všechny tikety firmy, (c) tikety firmy v konkrétních oblastech (vlastní tikety jsou vždy viditelné). Právo komentovat má žadatel vždy jen u tiketů, které sám založil.
 
@@ -412,9 +414,11 @@ Ve stavech „Řeší se" nebo „Příprava nabídky" je možné změnit řeši
 obchodníka bez změny stavu.
 
 Ve stavech „Vyřešeno" a „Zamítnuto" není možné dělat změny, pouze přesun
-do stavu „Řeší se" nebo „Příprava nabídky". Při znovuotevření se způsob
-vyřešení nebo důvod zamítnutí automaticky přepíše do komentáře (autorem
-komentáře je správce provádějící akci) a pole se vymažou.
+do stavu „Řeší se" nebo „Příprava nabídky". Znovu otevřít tiket může
+správce (s volbou cílového stavu u typu Požadavek) nebo přiřazený řešitel
+(vždy do stavu „Řeší se"). Při znovuotevření se způsob vyřešení nebo důvod
+zamítnutí automaticky přepíše do komentáře (autorem komentáře je uživatel
+provádějící akci) a pole se vymažou.
 
 ### Přílohy
 
