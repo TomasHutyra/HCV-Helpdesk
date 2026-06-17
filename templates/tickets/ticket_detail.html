@@ -216,12 +216,12 @@
     {% endif %}
 
     {# Reopen #}
-    {% if is_manager and ticket.is_locked %}
+    {% if ticket.is_locked and is_manager or ticket.is_locked and is_resolver and ticket.resolver == request.user %}
     <div class="card card-body-sm">
       <div class="panel-title">{% trans "Znovu otevřít" %}</div>
       <form method="post" action="{% url 'tickets:reopen' ticket.pk %}" class="form-stack">
         {% csrf_token %}
-        {% if ticket.type == 'development' %}
+        {% if is_manager and ticket.type == 'development' %}
         <select name="target">
           <option value="in_progress">{% trans "Řeší se" %}</option>
           <option value="offer_prep">{% trans "Příprava nabídky" %}</option>

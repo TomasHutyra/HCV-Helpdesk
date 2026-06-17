@@ -824,7 +824,11 @@ class RejectView(LoginRequiredMixin, View):
 class ReopenView(LoginRequiredMixin, View):
     def post(self, request, pk):
         ticket = get_object_or_404(Ticket, pk=pk)
-        if not _manager_has_ticket_access(request.user, ticket):
+        is_manager = _manager_has_ticket_access(request.user, ticket)
+        is_assigned_resolver = (
+            request.user.has_role(UserRole.RESOLVER) and ticket.resolver == request.user
+        )
+        if not is_manager and not is_assigned_resolver:
             messages.error(request, _('Nedostatečná oprávnění.'))
             return redirect('tickets:detail', pk=pk)
         if ticket.status not in (Ticket.STATUS_RESOLVED, Ticket.STATUS_REJECTED):
