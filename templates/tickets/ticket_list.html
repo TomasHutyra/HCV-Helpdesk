@@ -65,18 +65,60 @@
   </div>
   <div style="display:flex;gap:6px;align-items:flex-end">
     <button type="submit" class="btn btn-sky btn-sm">{% trans "Filtrovat" %}</button>
-    <a href="{% url 'tickets:list' %}" class="btn btn-secondary btn-sm">{% trans "Reset" %}</a>
+    <a href="{% url 'tickets:list' %}" class="btn btn-secondary btn-sm"
+       onclick="localStorage.removeItem('ticketFilters')">{% trans "Reset" %}</a>
     <a id="export-btn" href="{% url 'tickets:export' %}" class="btn btn-secondary btn-sm">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline-block;vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
       {% trans "Export XLSX" %}
     </a>
+    <div x-data="savedFilters()" class="saved-filters-wrap">
+      <button type="button" class="btn btn-secondary btn-sm" @click="toggle()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline-block;vertical-align:-2px;margin-right:4px"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        {% trans "Uložené filtry" %}
+      </button>
+      <div x-show="open" @click.away="open = false" x-cloak class="saved-filters-dropdown">
+        <!-- Save current -->
+        <div class="sf-save-row">
+          <template x-if="!saving">
+            <button type="button" class="sf-action-btn" @click="saving = true">
+              {% trans "Uložit aktuální filtr…" %}
+            </button>
+          </template>
+          <template x-if="saving">
+            <form @submit.prevent="save()" class="sf-save-form">
+              <input x-ref="nameInput" x-model="newName" type="text"
+                     placeholder="{% trans 'Název filtru' %}" maxlength="100" class="sf-name-input">
+              <button type="submit" class="btn btn-sky btn-sm">{% trans "Uložit" %}</button>
+              <button type="button" class="btn btn-secondary btn-sm" @click="saving = false; newName = ''">&#10005;</button>
+            </form>
+          </template>
+        </div>
+        <!-- Filter list -->
+        <template x-if="filters.length > 0">
+          <div class="sf-list">
+            <template x-for="f in filters" :key="f.id">
+              <div class="sf-item">
+                <a :href="'/tickets/?' + new URLSearchParams(f.params).toString()"
+                   class="sf-item-name" x-text="f.name"
+                   @click="localStorage.setItem('ticketFilters', new URLSearchParams(f.params).toString())"></a>
+                <button type="button" class="sf-item-delete" @click.stop="remove(f)"
+                        :title="'{% trans "Smazat" %}'">&#10005;</button>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
   </div>
 </form>
 
 <script>
 (function () {
+  var STORAGE_KEY = 'ticketFilters';
   var form = document.querySelector('.filter-bar');
   var btn = document.getElementById('export-btn');
+
+  // --- Export href updater (existing logic) ---
   function updateExportHref() {
     var base = btn.href.split('?')[0];
     var params = new URLSearchParams(new FormData(form));
@@ -90,7 +132,74 @@
   updateExportHref();
   form.addEventListener('change', updateExportHref);
   form.addEventListener('input', updateExportHref);
+
+  // --- localStorage persistence ---
+  var search = window.location.search;
+  if (search && search !== '?') {
+    // Page loaded with GET params → save them (strip leading '?')
+    var p = new URLSearchParams(search);
+    p.delete('page');
+    localStorage.setItem(STORAGE_KEY, p.toString());
+  } else {
+    // No GET params → restore from localStorage if available
+    var saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      window.location.search = '?' + saved;
+    }
+  }
 })();
+</script>
+
+<script>
+function savedFilters() {
+  return {
+    open: false,
+    filters: [],
+    loaded: false,
+    saving: false,
+    newName: '',
+    csrfToken: JSON.parse(document.body.getAttribute('hx-headers'))['X-CSRFToken'],
+
+    toggle() {
+      this.open = !this.open;
+      if (this.open && !this.loaded) this.load();
+    },
+
+    async load() {
+      var resp = await fetch('/tickets/filters/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      this.filters = await resp.json();
+      this.loaded = true;
+    },
+
+    async save() {
+      var name = this.newName.trim();
+      if (!name) return;
+      var params = Object.fromEntries(new URLSearchParams(window.location.search));
+      delete params.page;
+      await fetch('/tickets/filters/save/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.csrfToken,
+        },
+        body: JSON.stringify({ name: name, params: params }),
+      });
+      this.newName = '';
+      this.saving = false;
+      this.loaded = false;
+      await this.load();
+    },
+
+    async remove(f) {
+      if (!confirm('Smazat filtr „' + f.name + '“?')) return;
+      await fetch('/tickets/filters/' + f.id + '/delete/', {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': this.csrfToken },
+      });
+      this.filters = this.filters.filter(function(x) { return x.id !== f.id; });
+    },
+  };
+}
 </script>
 
   {# TABLE VIEW #}
