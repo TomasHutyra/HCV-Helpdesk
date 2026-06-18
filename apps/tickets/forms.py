@@ -232,6 +232,7 @@ class TicketFilterForm(forms.Form):
         choices=[('', _('— vše —'))] + Ticket.PRIORITY_CHOICES,
         required=False, label=_('Priorita'),
     )
+    search = forms.CharField(required=False, label=_('Hledat'))
     date_from = forms.DateField(
         required=False, label=_('Vytvořeno od'),
         widget=forms.DateInput(attrs={'type': 'date'}),
