@@ -255,9 +255,9 @@ def _apply_ticket_sort(qs, get_params, show_hours=False):
     return qs.order_by(f'{prefix}{field}')
 
 
-def _apply_ticket_filters(qs, get_params, user):
+def _apply_ticket_filters(qs, get_params, user, base_qs=None):
     """Aplikuje filtry z GET parametrů na queryset tiketů."""
-    form = TicketFilterForm(get_params, user=user)
+    form = TicketFilterForm(get_params, user=user, base_qs=base_qs)
     if form.is_valid():
         if form.cleaned_data.get('status'):
             status_val = form.cleaned_data['status']
@@ -301,8 +301,9 @@ class TicketListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
-        qs = _get_visible_tickets_qs(user).select_related('requester', 'resolver', 'sales', 'company', 'area')
-        qs = _apply_ticket_filters(qs, self.request.GET, user)
+        base_qs = _get_visible_tickets_qs(user)
+        qs = base_qs.select_related('requester', 'resolver', 'sales', 'company', 'area')
+        qs = _apply_ticket_filters(qs, self.request.GET, user, base_qs=base_qs)
 
         show_hours = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
         if show_hours:
@@ -342,19 +343,10 @@ class TicketExportView(LoginRequiredMixin, View):
         from django.utils.timezone import localtime
 
         user = request.user
-        qs = Ticket.objects.select_related('requester', 'resolver', 'sales', 'company', 'area')
+        base_qs = _get_visible_tickets_qs(user)
+        qs = base_qs.select_related('requester', 'resolver', 'sales', 'company', 'area')
 
-        if user.has_role(UserRole.ADMIN):
-            pass
-        elif user.has_role(UserRole.MANAGER):
-            q = user.get_ticket_visibility_q()
-            if q is not None:
-                qs = qs.filter(q)
-        else:
-            q = _build_user_ticket_q(user)
-            qs = qs.filter(q) if q is not None else qs.none()
-
-        qs = _apply_ticket_filters(qs, request.GET, user)
+        qs = _apply_ticket_filters(qs, request.GET, user, base_qs=base_qs)
 
         show_hours = user.has_role(UserRole.MANAGER, UserRole.RESOLVER, UserRole.SALES, UserRole.ADMIN)
         show_resolver = True
