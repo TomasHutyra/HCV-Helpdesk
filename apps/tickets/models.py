@@ -420,3 +420,22 @@ class TicketWatcher(models.Model):
 
     def __str__(self):
         return self.name or self.email
+
+
+class SavedFilter(models.Model):
+    user = models.ForeignKey(
+        'accounts.User', on_delete=models.CASCADE,
+        related_name='saved_filters', verbose_name=_('uživatel'),
+    )
+    name = models.CharField(_('název'), max_length=100)
+    params = models.JSONField(_('parametry'), default=dict)
+    created_at = models.DateTimeField(_('vytvořeno'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('uložený filtr')
+        verbose_name_plural = _('uložené filtry')
+        ordering = ['name']
+        unique_together = [('user', 'name')]
+
+    def __str__(self):
+        return f'{self.name} ({self.user})'

@@ -8,7 +8,7 @@ from django.test import TestCase, RequestFactory
 from django.contrib.auth.models import AnonymousUser
 
 from apps.accounts.models import Company, User, UserRole
-from apps.tickets.models import Area, Ticket
+from apps.tickets.models import Area, Ticket, SavedFilter
 from apps.tickets.views import _build_user_ticket_q, _can_comment, _can_add_attachment
 
 
@@ -232,3 +232,41 @@ class ParseWatchersTest(TestCase):
     def test_lowercased(self):
         result = _parse_watchers('JAN@FIRMA.CZ')
         self.assertIn('jan@firma.cz', result)
+
+
+class SavedFilterModelTest(TestCase):
+
+    def setUp(self):
+        self.co = _company()
+        self.user = _user('filterer', UserRole.REQUESTER, company=self.co)
+
+    def test_create_saved_filter(self):
+        sf = SavedFilter.objects.create(
+            user=self.user, name='Moje IT', params={'status': 'open', 'area': '1'},
+        )
+        self.assertEqual(sf.name, 'Moje IT')
+        self.assertEqual(sf.params['status'], 'open')
+        self.assertIsNotNone(sf.created_at)
+
+    def test_unique_name_per_user(self):
+        from django.db import IntegrityError
+        SavedFilter.objects.create(user=self.user, name='Dup', params={})
+        with self.assertRaises(IntegrityError):
+            SavedFilter.objects.create(user=self.user, name='Dup', params={})
+
+    def test_same_name_different_users(self):
+        other = _user('other_f', UserRole.REQUESTER, company=self.co)
+        SavedFilter.objects.create(user=self.user, name='Same', params={})
+        SavedFilter.objects.create(user=other, name='Same', params={})
+        self.assertEqual(SavedFilter.objects.filter(name='Same').count(), 2)
+
+    def test_ordering_by_name(self):
+        SavedFilter.objects.create(user=self.user, name='Zebra', params={})
+        SavedFilter.objects.create(user=self.user, name='Alfa', params={})
+        names = list(SavedFilter.objects.filter(user=self.user).values_list('name', flat=True))
+        self.assertEqual(names, ['Alfa', 'Zebra'])
+
+    def test_cascade_delete_user(self):
+        SavedFilter.objects.create(user=self.user, name='X', params={})
+        self.user.delete()
+        self.assertEqual(SavedFilter.objects.count(), 0)
