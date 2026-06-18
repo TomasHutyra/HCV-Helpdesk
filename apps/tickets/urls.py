@@ -7,6 +7,10 @@ urlpatterns = [
     path('', views.TicketListView.as_view(), name='list'),
     path('export/', views.TicketExportView.as_view(), name='export'),
     path('new/', views.TicketCreateView.as_view(), name='create'),
+    # Uložené filtry — JSON API
+    path('filters/', views.SavedFilterListView.as_view(), name='filter_list'),
+    path('filters/save/', views.SavedFilterSaveView.as_view(), name='filter_save'),
+    path('filters/<int:pk>/delete/', views.SavedFilterDeleteView.as_view(), name='filter_delete'),
     path('<int:pk>/', views.TicketDetailView.as_view(), name='detail'),
     path('<int:pk>/edit/', views.TicketUpdateView.as_view(), name='update'),
     # HTMX akce na tiketu

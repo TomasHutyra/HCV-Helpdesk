@@ -270,3 +270,80 @@ class SavedFilterModelTest(TestCase):
         SavedFilter.objects.create(user=self.user, name='X', params={})
         self.user.delete()
         self.assertEqual(SavedFilter.objects.count(), 0)
+
+
+import json
+
+
+class SavedFilterAPITest(TestCase):
+
+    def setUp(self):
+        self.co = _company()
+        self.user = _user('api_user', UserRole.REQUESTER, company=self.co)
+        self.client.force_login(self.user)
+
+    def test_list_empty(self):
+        resp = self.client.get('/tickets/filters/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(json.loads(resp.content), [])
+
+    def test_save_creates_filter(self):
+        resp = self.client.post(
+            '/tickets/filters/save/',
+            data=json.dumps({'name': 'Test', 'params': {'status': 'open'}}),
+            content_type='application/json',
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data['name'], 'Test')
+        self.assertTrue(SavedFilter.objects.filter(user=self.user, name='Test').exists())
+
+    def test_save_upserts_existing(self):
+        self.client.post(
+            '/tickets/filters/save/',
+            data=json.dumps({'name': 'Up', 'params': {'status': 'open'}}),
+            content_type='application/json',
+        )
+        self.client.post(
+            '/tickets/filters/save/',
+            data=json.dumps({'name': 'Up', 'params': {'status': 'closed'}}),
+            content_type='application/json',
+        )
+        self.assertEqual(SavedFilter.objects.filter(user=self.user, name='Up').count(), 1)
+        self.assertEqual(
+            SavedFilter.objects.get(user=self.user, name='Up').params['status'], 'closed',
+        )
+
+    def test_save_rejects_empty_name(self):
+        resp = self.client.post(
+            '/tickets/filters/save/',
+            data=json.dumps({'name': '', 'params': {}}),
+            content_type='application/json',
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_delete_own_filter(self):
+        sf = SavedFilter.objects.create(user=self.user, name='Del', params={})
+        resp = self.client.delete(f'/tickets/filters/{sf.pk}/delete/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(SavedFilter.objects.filter(pk=sf.pk).exists())
+
+    def test_delete_other_users_filter_returns_404(self):
+        other = _user('other_api', UserRole.REQUESTER, company=self.co)
+        sf = SavedFilter.objects.create(user=other, name='Nope', params={})
+        resp = self.client.delete(f'/tickets/filters/{sf.pk}/delete/')
+        self.assertEqual(resp.status_code, 404)
+
+    def test_list_returns_own_filters_only(self):
+        SavedFilter.objects.create(user=self.user, name='Mine', params={'a': '1'})
+        other = _user('other_list', UserRole.REQUESTER, company=self.co)
+        SavedFilter.objects.create(user=other, name='Theirs', params={})
+        resp = self.client.get('/tickets/filters/')
+        data = json.loads(resp.content)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['name'], 'Mine')
+
+    def test_anonymous_user_redirected(self):
+        self.client.logout()
+        resp = self.client.get('/tickets/filters/')
+        self.assertEqual(resp.status_code, 302)

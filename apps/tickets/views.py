@@ -1,11 +1,12 @@
 import io
+import json
 import os
 import uuid
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as db_models
-from django.http import Http404, HttpResponse, FileResponse
+from django.http import Http404, HttpResponse, FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.db.models.functions import Lower
@@ -19,7 +20,7 @@ from .forms import (
     ResolveForm, RejectForm, ChangeTypeForm, CommentForm, TimeLogForm,
     TicketFilterForm, AttachmentUploadForm, WorkCategoryAdminForm,
 )
-from .models import Ticket, Comment, TimeLog, TicketAttachment, TicketChange, WorkCategory, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
+from .models import Ticket, Comment, TimeLog, TicketAttachment, TicketChange, WorkCategory, SavedFilter, ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE
 
 
 def _log_change(ticket, user, field, old_value='', new_value=''):
@@ -1161,3 +1162,39 @@ class WorkCategoryUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
+# ------------------------------------------------------------------ #
+# Uložené filtry — JSON API                                           #
+# ------------------------------------------------------------------ #
+
+class SavedFilterListView(LoginRequiredMixin, View):
+    def get(self, request):
+        filters = SavedFilter.objects.filter(user=request.user)
+        data = [
+            {'id': f.pk, 'name': f.name, 'params': f.params}
+            for f in filters
+        ]
+        return JsonResponse(data, safe=False)
+
+
+class SavedFilterSaveView(LoginRequiredMixin, View):
+    def post(self, request):
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        name = body.get('name', '').strip()
+        if not name:
+            return JsonResponse({'error': 'Name is required'}, status=400)
+        params = body.get('params', {})
+        sf, _ = SavedFilter.objects.update_or_create(
+            user=request.user, name=name,
+            defaults={'params': params},
+        )
+        return JsonResponse({'id': sf.pk, 'name': sf.name})
+
+
+class SavedFilterDeleteView(LoginRequiredMixin, View):
+    def delete(self, request, pk):
+        sf = get_object_or_404(SavedFilter, pk=pk, user=request.user)
+        sf.delete()
+        return JsonResponse({'ok': True})
