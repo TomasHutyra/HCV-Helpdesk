@@ -578,6 +578,19 @@ Filtry Řešitel a Žadatel zobrazují pouze uživatele, kteří figurují
 na tiketech viditelných přihlášenému uživateli — ne všechny uživatele
 se stejnou rolí v systému.
 
+### Uložené filtry
+
+**Automatická persistence** — při odchodu z přehledu a návratu zpět se
+nastavení filtrů automaticky obnoví (uloženo v prohlížeči přes localStorage).
+Tlačítko „Reset" vymaže uložený filtr. Stránkování (page) se nepersistuje.
+
+**Pojmenované filtry** — uživatel si může uložit aktuální nastavení filtru
+pod názvem (tlačítko „Uložené filtry" v liště filtrů). Uložené filtry jsou
+osobní — každý uživatel vidí a spravuje jen své. Kliknutím na uložený filtr
+se přehled přefiltruje podle uložených parametrů. Filtr lze smazat tlačítkem ✕.
+Data pojmenovaných filtrů jsou uložena v databázi (model `SavedFilter`),
+takže přežijí změnu prohlížeče i zařízení.
+
 ### Export do Excelu
 
 Z přehledu požadavků lze exportovat aktuálně zobrazené tikety (včetně
