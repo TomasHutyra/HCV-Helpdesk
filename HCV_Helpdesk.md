@@ -541,9 +541,11 @@ ve statistikách:
 
 Každý uživatel vidí pouze požadavky, ke kterým má přístup (viz role).
 
-Přehled obsahuje sloupce: #, Název, Typ, Stav, Priorita, Firma, Vytvořeno.
-Správce navíc vidí sloupec Řešitel. Řešitel, obchodník a správce vidí
-sloupec Hodiny (součet všech zaznamenaných hodin k danému požadavku).
+Přehled obsahuje sloupce: #, Název, Typ, Stav, Priorita, Firma, Vytvořeno,
+Vyřešeno. Správce navíc vidí sloupec Řešitel. Řešitel, obchodník a správce
+vidí sloupec Hodiny (součet všech zaznamenaných hodin k danému požadavku).
+Sloupec Vyřešeno zobrazuje datum vyřešení tiketu (resolved_at); u nevyřešených
+tiketů se zobrazuje „—".
 
 ### Řazení
 
@@ -553,7 +555,7 @@ tentýž sloupec obrátí směr řazení. Výchozí řazení je podle data
 vytvoření sestupně. Řazení je zachováno při filtrování i stránkování.
 
 Řaditelné sloupce: #, Název, Typ, Stav, Priorita, Oblast, Firma,
-Řešitel, Vytvořeno.
+Řešitel, Vytvořeno, Vyřešeno.
 
 ### Filtry
 
@@ -564,11 +566,11 @@ Filtr Stav nabízí kromě jednotlivých stavů také skupinové hodnoty:
 „— otevřené —" (Nový, Příprava nabídky, Řeší se) a „— zavřené —"
 (Vyřešeno, Zamítnuto).
 
-Filtr data vytvoření funguje jako rozsah: pole „Vytvořeno od" omezuje
-výsledky na tikety vytvořené v daný den nebo později, pole „Vytvořeno do"
-na tikety vytvořené v daný den nebo dříve. Obě pole jsou volitelná
-a nezávislá — lze zadat jen jedno z nich (filtr od, filtr do) nebo obě
-najednou pro přesný rozsah.
+Datumové filtry „Vytvořeno" a „Vyřešeno" používají flatpickr date-range
+picker. Uživatel klikne na pole a v kalendáři vybere buď jedno datum
+(= tikety z tohoto dne), nebo dva dny (= rozsah od–do včetně). Tlačítko
+„✕ Smazat" ve spodní části kalendáře výběr vyčistí. Na pozadí se odesílají
+GET parametry date_from/date_to (resp. resolved_from/resolved_to).
 
 Řešitel, správce a administrátor mohou navíc filtrovat podle: Firma.
 
@@ -599,8 +601,8 @@ viditelnosti jako přehled — každý uživatel exportuje pouze tikety,
 ke kterým má přístup.
 
 Sloupce exportu: #, Název, Typ, Stav, Priorita, Oblast, Firma, Žadatel,
-Vytvořeno. Správce a administrátor mají navíc sloupec Řešitel. Řešitel,
-obchodník a správce mají navíc sloupec Hodiny.
+Vytvořeno, Vyřešeno. Správce a administrátor mají navíc sloupec Řešitel.
+Řešitel, obchodník a správce mají navíc sloupec Hodiny.
 
 ### Navigace v detailu požadavku
 

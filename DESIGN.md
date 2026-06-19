@@ -25,11 +25,20 @@ Middleware, který obsluhuje statické soubory přímo z Gunicorna bez nutnosti 
 
 ### Frontend
 
+**Tailwind CSS**
+Utility-first CSS framework načtený z CDN (`cdn.tailwindcss.com`). Používá se pro rychlé prototypování a drobné layout utility; hlavní styly jsou ve vlastním `static/css/app.css`.
+
 **HTMX**
 JavaScript knihovna načtená z CDN. Umožňuje přidávat interaktivitu HTML atributy (`hx-post`, `hx-target`, `hx-swap`) — kliknutí na tlačítko odešle AJAX požadavek na server a výsledkem nahradí část stránky. Využíváno pro všechny akce na detailu tiketu: přiřazení řešitele/obchodníka, přidání komentáře, zápis času, upload/smazání přílohy. Stránka se tedy neobnovuje celá.
 
 **Alpine.js**
-Odlehčený JavaScript framework načtený z CDN. Používá se pro čistě klientskou interaktivitu, která nevyžaduje server: rozbalovací panel Historie změn (`x-show`, `x-data`) a podmíněné zobrazení polí formuláře uživatele dle zaškrtnutých rolí (`x-init`, `@change`).
+Odlehčený JavaScript framework načtený z CDN. Používá se pro čistě klientskou interaktivitu, která nevyžaduje server: rozbalovací panel Historie změn (`x-show`, `x-data`), podmíněné zobrazení polí formuláře uživatele dle zaškrtnutých rolí (`x-init`, `@change`), přepínání pohledů (tabulka/karty) a uložené filtry.
+
+**Flatpickr**
+Odlehčený date picker načtený z CDN. Používá se v přehledu tiketů pro datumové filtry „Vytvořeno" a „Vyřešeno" v režimu `mode: "range"` — uživatel vybere jedno datum nebo rozsah dvou dat v kalendáři. Česká lokalizace.
+
+**Google Fonts**
+Fonty načtené z CDN: Montserrat (nadpisy), Inter (běžný text), JetBrains Mono (monospace).
 
 ### Databáze
 
@@ -94,8 +103,14 @@ HCV_Helpdesk/
 │
 ├── apps/
 │   ├── accounts/           # Uživatelé, role, firmy, oblasti
+│   │   └── management/commands/
+│   │       ├── assign_roles.py        # Přiřazení rolí uživatelům
+│   │       ├── clear_test_data.py     # Smazání testovacích dat
+│   │       └── create_initial_users.py # Vytvoření počátečních uživatelů
 │   ├── tickets/            # Tikety, komentáře, přílohy, záznamy času, audit log
 │   ├── notifications/      # E-mailové notifikace, IMAP polling, Celery tasky
+│   │   └── management/commands/
+│   │       └── poll_inbox.py          # Ruční spuštění IMAP pollingu
 │   └── stats/              # Statistiky (dashboard pro řešitele a správce)
 │
 ├── templates/              # Všechny HTML šablony (globální adresář)
@@ -106,7 +121,12 @@ HCV_Helpdesk/
 │   └── stats/              # Šablony pro dashboard
 │
 ├── static/
-│   └── css/app.css         # Veškeré CSS (design system, utility třídy)
+│   ├── css/app.css         # Veškeré CSS (design system, utility třídy)
+│   └── images/             # Logo, favicon
+│
+├── locale/                 # Překlady (i18n)
+│   ├── cs/LC_MESSAGES/     # Čeština
+│   └── en/LC_MESSAGES/     # Angličtina
 │
 ├── nginx/nginx.conf        # Nginx konfigurace pro produkci
 ├── docker-compose.yml      # Definice Docker služeb
@@ -129,6 +149,9 @@ HCV_Helpdesk/
 - `managed_areas` — M2M na `Area`; omezení viditelnosti tiketů pro Správce
 - `managed_companies` — M2M na `Company`; omezení viditelnosti tiketů pro Správce
 - `resolver_areas` — M2M na `Area`; omezení viditelnosti nových tiketů pro Řešitele
+- `notify_new_ticket` — bool; řešitel dostane e-mail při vytvoření nového tiketu ve svých oblastech
+- `requester_scope` — rozsah viditelnosti tiketů žadatele (`own` / `company` / `company_areas`)
+- `requester_areas` — M2M na `Area`; omezení viditelnosti na tikety firmy z konkrétních oblastí (při `requester_scope = company_areas`)
 
 Role jsou odděleny do modelu **`UserRole`** (M2M přes samostatnou tabulku), aby jeden uživatel mohl mít více rolí najednou. Dostupné role: `requester`, `resolver`, `sales`, `manager`, `admin`.
 
@@ -138,16 +161,23 @@ Role jsou odděleny do modelu **`UserRole`** (M2M přes samostatnou tabulku), ab
 
 ### `apps.tickets`
 
+**`WorkCategory`** — interní kategorie práce (přiřazuje řešitel nebo správce, žadatel nevidí):
+- `name` — název kategorie
+- `areas` — M2M na `Area`; prázdné = kategorie platí pro všechny oblasti
+
 **`Ticket`** — hlavní entita:
 - Typ: `problem` / `development` / `improvement`
 - Stav: FSM pole (`django-fsm`), platné přechody závisí na typu tiketu
 - Priority: `high` / `medium` / `low`
-- FK: `requester`, `resolver`, `sales`, `company`, `area`
+- FK: `requester`, `resolver`, `sales`, `company`, `area`, `work_category`
+- `contact_person_name`, `contact_person_email` — kontaktní osoba (nemusí být žadatel)
 - `resolution_notes`, `rejection_reason` — vyplňují se při uzavření; při znovuotevření se zkopírují do komentáře a vymažou
 - `rating` — hodnocení spokojenosti žadatele (0–5, nullable); uloží se okamžitě při kliknutí na odkaz v e-mailu
 - `rating_comment` — volitelný textový komentář k hodnocení (max 2 000 znaků); odesílá se samostatně po kliknutí na hvězdičky; při znovuotevření se vymaže
 - `rating_token` — UUID token pro jednorázový hodnotící odkaz z e-mailu; po použití nebo znovuotevření se regeneruje
 - `rating_comment_token` — UUID token pro jednorázové přidání komentáře k hodnocení; generuje se při uložení hodnocení, po odeslání komentáře nebo znovuotevření tiketu se nastaví na `null`
+- `created_at`, `updated_at` — časová razítka vytvoření a poslední úpravy
+- `resolved_at` — datum vyřešení; nastaví se automaticky při přechodu do stavu „Vyřešeno", vynuluje se při znovuotevření
 
 **Stavový automat** (`django-fsm`):
 ```
@@ -166,9 +196,21 @@ Uzamčené stavy (`Vyřešeno`, `Zamítnuto`) povolují pouze přechod zpět na 
 
 **`TimeLog`** — záznam odpracovaného času (uživatel, hodiny, poznámka).
 
-**`TicketAttachment`** — příloha; soubor uložen do `media/tickets/attachments/` pod UUID názvem, originální název v DB.
+**`TicketAttachment`** — příloha; soubor uložen do `media/tickets/attachments/` pod UUID názvem, originální název v DB. Povolené přípony a max. velikost (5 MB) definovány na úrovni modelu.
 
 **`TicketChange`** — auditní log; každá změna stavu, pole, přiřazení, přílohy je zaznamenána (pole, stará hodnota, nová hodnota, autor, čas).
+
+**`TicketWatcher`** — sledující (externí e-mailová adresa CC):
+- `ticket` — FK na `Ticket`
+- `email`, `name` — e-mail a volitelné jméno
+- Unikátní constraint `(ticket, email)` — každý e-mail max jednou na tiket
+- Sledující jsou kopírováni na notifikační e-maily (nový komentář, vyřešení/zamítnutí)
+
+**`SavedFilter`** — pojmenované uložené filtry přehledu tiketů:
+- `user` — FK na `User` (osobní filtry)
+- `name` — název filtru (unikátní v rámci uživatele)
+- `params` — JSONField s GET parametry filtru
+- Data uložena v DB — přežijí změnu prohlížeče/zařízení
 
 ---
 
@@ -207,6 +249,8 @@ Interaktivní akce na detailu tiketu (přiřazení řešitele, přidání koment
 Slouží pro klientskou interaktivitu bez nutnosti volání serveru:
 - Rozbalovací panel Historie změn na detailu tiketu
 - Podmíněné zobrazení polí „Spravované oblasti/firmy" a „Oblasti řešitele" na formuláři uživatele dle zaškrtnutých rolí
+- Přepínání pohledu tabulka/karty v přehledu tiketů (stav v localStorage)
+- Dropdown uložených filtrů (CRUD přes fetch API)
 
 ---
 
@@ -406,6 +450,7 @@ worker   — Celery worker (zpracování asynchronních úloh)
 beat     — Celery Beat (plánování periodických tasků)
 db       — PostgreSQL 16
 redis    — Redis 7 (Celery broker + backend + cache)
+certbot  — Let's Encrypt certifikáty (profil "certbot", spouští se ručně)
 ```
 
 ### Nginx
