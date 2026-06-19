@@ -243,6 +243,16 @@ class TicketFilterForm(forms.Form):
         widget=forms.DateInput(attrs={'type': 'date'}),
         input_formats=['%Y-%m-%d'],
     )
+    resolved_from = forms.DateField(
+        required=False, label=_('Vyřešeno od'),
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        input_formats=['%Y-%m-%d'],
+    )
+    resolved_to = forms.DateField(
+        required=False, label=_('Vyřešeno do'),
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        input_formats=['%Y-%m-%d'],
+    )
 
     def __init__(self, *args, user=None, base_qs=None, **kwargs):
         super().__init__(*args, **kwargs)

@@ -40,7 +40,7 @@
   <input type="hidden" name="dir" value="{{ current_dir }}">
   {% endif %}
   {% for field in filter_form %}
-  {% if field.html_name != 'date_from' and field.html_name != 'date_to' %}
+  {% if field.html_name != 'date_from' and field.html_name != 'date_to' and field.html_name != 'resolved_from' and field.html_name != 'resolved_to' %}
   <div class="filter-field">
     <label>{{ field.label }}</label>
     <select name="{{ field.html_name }}">
@@ -58,6 +58,14 @@
   <div class="filter-field" style="min-width:130px">
     <label>{% trans "Vytvořeno do" %}</label>
     <input type="date" name="date_to" value="{{ request.GET.date_to|default:'' }}">
+  </div>
+  <div class="filter-field" style="min-width:130px">
+    <label>{% trans "Vyřešeno od" %}</label>
+    <input type="date" name="resolved_from" value="{{ request.GET.resolved_from|default:'' }}">
+  </div>
+  <div class="filter-field" style="min-width:130px">
+    <label>{% trans "Vyřešeno do" %}</label>
+    <input type="date" name="resolved_to" value="{{ request.GET.resolved_to|default:'' }}">
   </div>
   <div class="filter-field" style="min-width:160px">
     <label>{% trans "Hledat" %}</label>
@@ -218,7 +226,8 @@ function savedFilters() {
           {% if show_requester %}{% include 'tickets/partials/sort_th.html' with key="requester" label=_("Žadatel") s=s d=d p=p %}{% endif %}
           {% include 'tickets/partials/sort_th.html' with key="resolver"   label=_("Řešitel")               s=s d=d p=p %}
           {% if show_hours %}{% include 'tickets/partials/sort_th.html' with key="hours" label=_("Hodiny") s=s d=d p=p right=True %}{% endif %}
-          {% include 'tickets/partials/sort_th.html' with key="created_at" label=_("Vytvořeno")             s=s d=d p=p %}
+          {% include 'tickets/partials/sort_th.html' with key="created_at"  label=_("Vytvořeno")             s=s d=d p=p %}
+          {% include 'tickets/partials/sort_th.html' with key="resolved_at" label=_("Vyřešeno")             s=s d=d p=p %}
           {% endwith %}
         </tr>
       </thead>
@@ -236,6 +245,7 @@ function savedFilters() {
           <td class="ticket-muted">{{ ticket.resolver|default:'—' }}</td>
           {% if show_hours %}<td class="ticket-hours">{% if ticket.hours_sum %}{{ ticket.hours_sum|floatformat:"-2" }} h{% else %}—{% endif %}</td>{% endif %}
           <td class="ticket-date">{{ ticket.created_at|date:"d.m.Y" }}</td>
+          <td class="ticket-date">{% if ticket.resolved_at %}{{ ticket.resolved_at|date:"d.m.Y" }}{% else %}—{% endif %}</td>
         </tr>
         {% empty %}
         <tr>

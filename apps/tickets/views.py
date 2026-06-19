@@ -203,7 +203,8 @@ _SORT_FIELDS = {
     'company':    'company__name',
     'resolver':   'resolver__last_name',
     'hours':      'hours_sum',
-    'created_at': 'created_at',
+    'created_at':  'created_at',
+    'resolved_at': 'resolved_at',
 }
 
 
@@ -290,6 +291,10 @@ def _apply_ticket_filters(qs, get_params, user, base_qs=None):
             qs = qs.filter(created_at__date__gte=form.cleaned_data['date_from'])
         if form.cleaned_data.get('date_to'):
             qs = qs.filter(created_at__date__lte=form.cleaned_data['date_to'])
+        if form.cleaned_data.get('resolved_from'):
+            qs = qs.filter(resolved_at__date__gte=form.cleaned_data['resolved_from'])
+        if form.cleaned_data.get('resolved_to'):
+            qs = qs.filter(resolved_at__date__lte=form.cleaned_data['resolved_to'])
     return qs
 
 
@@ -370,6 +375,7 @@ class TicketExportView(LoginRequiredMixin, View):
         if show_hours:
             headers.append(_('Hodiny'))
         headers.append(_('Vytvořeno'))
+        headers.append(_('Vyřešeno'))
 
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=str(header))
@@ -398,6 +404,11 @@ class TicketExportView(LoginRequiredMixin, View):
             created = localtime(ticket.created_at)
             ws.cell(row=row, column=col, value=created.replace(tzinfo=None))
             ws.cell(row=row, column=col).number_format = 'DD.MM.YYYY'
+            col += 1
+            if ticket.resolved_at:
+                resolved = localtime(ticket.resolved_at)
+                ws.cell(row=row, column=col, value=resolved.replace(tzinfo=None))
+                ws.cell(row=row, column=col).number_format = 'DD.MM.YYYY'
 
         for col in ws.columns:
             max_len = max((len(str(cell.value)) if cell.value else 0) for cell in col)
