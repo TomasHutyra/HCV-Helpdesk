@@ -5,6 +5,15 @@
 {% block nav_tickets %}active{% endblock %}
 {% block topbar_title %}{% trans "Tikety" %}{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css">
+<style>
+.flatpickr-input.filter-daterange { cursor: pointer; min-width: 190px; }
+.flatpickr-input.filter-daterange::placeholder { color: var(--c-text-light, #999); }
+</style>
+{% endblock %}
+
 {% block content %}
 <div x-data="{ view: localStorage.getItem('ticketView') || 'table' }">
 
@@ -40,7 +49,7 @@
   <input type="hidden" name="dir" value="{{ current_dir }}">
   {% endif %}
   {% for field in filter_form %}
-  {% if field.html_name != 'date_from' and field.html_name != 'date_to' and field.html_name != 'resolved_from' and field.html_name != 'resolved_to' %}
+  {% if field.html_name != 'date_from' and field.html_name != 'date_to' and field.html_name != 'resolved_from' and field.html_name != 'resolved_to' and field.html_name != 'search' %}
   <div class="filter-field">
     <label>{{ field.label }}</label>
     <select name="{{ field.html_name }}">
@@ -51,21 +60,17 @@
   </div>
   {% endif %}
   {% endfor %}
-  <div class="filter-field" style="min-width:130px">
-    <label>{% trans "Vytvořeno od" %}</label>
-    <input type="date" name="date_from" value="{{ request.GET.date_from|default:'' }}">
+  <div class="filter-field">
+    <label>{% trans "Vytvořeno" %}</label>
+    <input type="text" id="fp-created" class="flatpickr-input filter-daterange" placeholder="{% trans 'Datum / rozsah' %}" readonly>
+    <input type="hidden" name="date_from" id="fp-created-from" value="{{ request.GET.date_from|default:'' }}">
+    <input type="hidden" name="date_to" id="fp-created-to" value="{{ request.GET.date_to|default:'' }}">
   </div>
-  <div class="filter-field" style="min-width:130px">
-    <label>{% trans "Vytvořeno do" %}</label>
-    <input type="date" name="date_to" value="{{ request.GET.date_to|default:'' }}">
-  </div>
-  <div class="filter-field" style="min-width:130px">
-    <label>{% trans "Vyřešeno od" %}</label>
-    <input type="date" name="resolved_from" value="{{ request.GET.resolved_from|default:'' }}">
-  </div>
-  <div class="filter-field" style="min-width:130px">
-    <label>{% trans "Vyřešeno do" %}</label>
-    <input type="date" name="resolved_to" value="{{ request.GET.resolved_to|default:'' }}">
+  <div class="filter-field">
+    <label>{% trans "Vyřešeno" %}</label>
+    <input type="text" id="fp-resolved" class="flatpickr-input filter-daterange" placeholder="{% trans 'Datum / rozsah' %}" readonly>
+    <input type="hidden" name="resolved_from" id="fp-resolved-from" value="{{ request.GET.resolved_from|default:'' }}">
+    <input type="hidden" name="resolved_to" id="fp-resolved-to" value="{{ request.GET.resolved_to|default:'' }}">
   </div>
   <div class="filter-field" style="min-width:160px">
     <label>{% trans "Hledat" %}</label>
@@ -208,6 +213,54 @@ function savedFilters() {
     },
   };
 }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/cs.js"></script>
+<script>
+(function() {
+  function initRange(inputId, fromId, toId) {
+    var fromEl = document.getElementById(fromId);
+    var toEl = document.getElementById(toId);
+    var initDates = [];
+    if (fromEl.value) initDates.push(fromEl.value);
+    if (toEl.value && toEl.value !== fromEl.value) initDates.push(toEl.value);
+
+    flatpickr('#' + inputId, {
+      mode: 'range',
+      dateFormat: 'd.m.Y',
+      locale: 'cs',
+      allowInput: false,
+      defaultDate: initDates.length ? initDates.map(function(d) { return flatpickr.parseDate(d, 'Y-m-d'); }) : [],
+      onChange: function(dates) {
+        if (dates.length === 0) {
+          fromEl.value = '';
+          toEl.value = '';
+        } else if (dates.length === 1) {
+          fromEl.value = flatpickr.formatDate(dates[0], 'Y-m-d');
+          toEl.value = flatpickr.formatDate(dates[0], 'Y-m-d');
+        } else {
+          fromEl.value = flatpickr.formatDate(dates[0], 'Y-m-d');
+          toEl.value = flatpickr.formatDate(dates[1], 'Y-m-d');
+        }
+      },
+      onReady: function(_, __, fp) {
+        var clear = document.createElement('button');
+        clear.type = 'button';
+        clear.textContent = '✕ Smazat';
+        clear.style.cssText = 'width:100%;padding:6px;border:none;background:#f0f0f0;cursor:pointer;font-size:12px;border-top:1px solid #ddd';
+        clear.addEventListener('click', function() {
+          fp.clear();
+          fromEl.value = '';
+          toEl.value = '';
+        });
+        fp.calendarContainer.appendChild(clear);
+      },
+    });
+  }
+  initRange('fp-created', 'fp-created-from', 'fp-created-to');
+  initRange('fp-resolved', 'fp-resolved-from', 'fp-resolved-to');
+})();
 </script>
 
   {# TABLE VIEW #}
