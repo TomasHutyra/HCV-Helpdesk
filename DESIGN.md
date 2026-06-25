@@ -251,6 +251,7 @@ Slouží pro klientskou interaktivitu bez nutnosti volání serveru:
 - Podmíněné zobrazení polí „Spravované oblasti/firmy" a „Oblasti řešitele" na formuláři uživatele dle zaškrtnutých rolí
 - Přepínání pohledu tabulka/karty v přehledu tiketů (stav v localStorage)
 - Dropdown uložených filtrů (CRUD přes fetch API)
+- Negativní filtry — přepínač `=`/`≠` vedle labelu dropdown filtrů (vanilla JS, bez Alpine); při aktivním exclude se dynamicky vytvoří hidden input `{pole}_exclude=1` při submitu formuláře; backend používá `qs.exclude()` místo `qs.filter()`
 
 ---
 

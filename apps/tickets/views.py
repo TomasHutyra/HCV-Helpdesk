@@ -260,28 +260,22 @@ def _apply_ticket_filters(qs, get_params, user, base_qs=None):
     """Aplikuje filtry z GET parametrů na queryset tiketů."""
     form = TicketFilterForm(get_params, user=user, base_qs=base_qs)
     if form.is_valid():
-        if form.cleaned_data.get('status'):
-            status_val = form.cleaned_data['status']
+        cd = form.cleaned_data
+        if cd.get('status'):
+            status_val = cd['status']
+            neg = cd.get('status_exclude')
             if status_val == 'open':
-                qs = qs.filter(status__in=[
-                    Ticket.STATUS_NEW, Ticket.STATUS_OFFER, Ticket.STATUS_IN_PROGRESS,
-                ])
+                statuses = [Ticket.STATUS_NEW, Ticket.STATUS_OFFER, Ticket.STATUS_IN_PROGRESS]
+                qs = qs.exclude(status__in=statuses) if neg else qs.filter(status__in=statuses)
             elif status_val == 'closed':
-                qs = qs.filter(status__in=[Ticket.STATUS_RESOLVED, Ticket.STATUS_REJECTED])
+                statuses = [Ticket.STATUS_RESOLVED, Ticket.STATUS_REJECTED]
+                qs = qs.exclude(status__in=statuses) if neg else qs.filter(status__in=statuses)
             else:
-                qs = qs.filter(status=status_val)
-        if form.cleaned_data.get('type'):
-            qs = qs.filter(type=form.cleaned_data['type'])
-        if form.cleaned_data.get('area'):
-            qs = qs.filter(area=form.cleaned_data['area'])
-        if form.cleaned_data.get('priority'):
-            qs = qs.filter(priority=form.cleaned_data['priority'])
-        if form.cleaned_data.get('company'):
-            qs = qs.filter(company=form.cleaned_data['company'])
-        if form.cleaned_data.get('requester'):
-            qs = qs.filter(requester=form.cleaned_data['requester'])
-        if form.cleaned_data.get('resolver'):
-            qs = qs.filter(resolver=form.cleaned_data['resolver'])
+                qs = qs.exclude(status=status_val) if neg else qs.filter(status=status_val)
+        for field in ('type', 'area', 'priority', 'company', 'requester', 'resolver'):
+            if cd.get(field):
+                neg = cd.get(f'{field}_exclude')
+                qs = qs.exclude(**{field: cd[field]}) if neg else qs.filter(**{field: cd[field]})
         if form.cleaned_data.get('search'):
             q = form.cleaned_data['search']
             qs = qs.filter(

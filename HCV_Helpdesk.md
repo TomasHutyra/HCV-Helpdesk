@@ -580,6 +580,19 @@ Filtry Řešitel a Žadatel zobrazují pouze uživatele, kteří figurují
 na tiketech viditelných přihlášenému uživateli — ne všechny uživatele
 se stejnou rolí v systému.
 
+#### Negativní filtry (vyloučení)
+
+Všechny dropdown filtry (Stav, Typ, Oblast, Priorita, Firma, Žadatel,
+Řešitel) podporují režim vyloučení (≠). Po výběru hodnoty se vedle
+labelu zobrazí přepínač `=`. Kliknutím se přepne na `≠` (oranžové
+zvýraznění + oranžový levý border na selectu) — filtr pak zobrazí
+tikety, které **nemají** vybranou hodnotu. Přepnutí zpět na `=` vrátí
+pozitivní filtrování. Při výběru „— vše —" se přepínač skryje.
+
+Exclude stav se přenáší přes GET parametry `{pole}_exclude=1`
+(např. `status_exclude=1`) a ukládá se spolu s ostatními parametry
+do uložených filtrů i localStorage.
+
 ### Uložené filtry
 
 **Automatická persistence** — při odchodu z přehledu a návratu zpět se

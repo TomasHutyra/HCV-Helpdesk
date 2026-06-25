@@ -49,9 +49,15 @@
   <input type="hidden" name="dir" value="{{ current_dir }}">
   {% endif %}
   {% for field in filter_form %}
-  {% if field.html_name != 'date_from' and field.html_name != 'date_to' and field.html_name != 'resolved_from' and field.html_name != 'resolved_to' and field.html_name != 'search' %}
-  <div class="filter-field">
-    <label>{{ field.label }}</label>
+  {% if field.html_name != 'date_from' and field.html_name != 'date_to' and field.html_name != 'resolved_from' and field.html_name != 'resolved_to' and field.html_name != 'search' and '_exclude' not in field.html_name %}
+  <div class="filter-field" data-filter="{{ field.html_name }}">
+    <label>
+      {{ field.label }}
+      <button type="button" class="filter-neg-toggle" data-target="{{ field.html_name }}_exclude"
+              title="{% trans 'Přepnout zahrnout / vyloučit' %}">
+        <span class="neg-eq">=</span><span class="neg-neq">≠</span>
+      </button>
+    </label>
     <select name="{{ field.html_name }}">
       {% for val, label in field.field.choices %}
       <option value="{{ val }}" {% if field.value|stringformat:"s" == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
@@ -124,6 +130,51 @@
     </div>
   </div>
 </form>
+
+<script>
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var form = document.querySelector('.filter-bar');
+
+  document.querySelectorAll('.filter-neg-toggle').forEach(function(btn) {
+    var target = btn.getAttribute('data-target');
+    var field = btn.closest('.filter-field');
+    var select = field.querySelector('select');
+    var isNeg = params.get(target) === '1';
+
+    function update() {
+      var hasValue = select.value !== '';
+      btn.style.display = hasValue ? 'inline-flex' : 'none';
+      field.classList.toggle('filter-exclude', isNeg && hasValue);
+      if (!hasValue) { isNeg = false; field.classList.remove('filter-exclude'); }
+    }
+
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      isNeg = !isNeg;
+      update();
+    });
+    select.addEventListener('change', update);
+    update();
+  });
+
+  form.addEventListener('submit', function() {
+    document.querySelectorAll('.filter-neg-toggle').forEach(function(btn) {
+      var target = btn.getAttribute('data-target');
+      var field = btn.closest('.filter-field');
+      var select = field.querySelector('select');
+      if (select.value && field.classList.contains('filter-exclude')) {
+        var inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = target; inp.value = '1';
+        form.appendChild(inp);
+      }
+    });
+    form.querySelectorAll('select, input').forEach(function(el) {
+      if (el.name && el.value === '') el.disabled = true;
+    });
+  });
+})();
+</script>
 
 <script>
 (function () {

@@ -232,6 +232,10 @@ class TicketFilterForm(forms.Form):
         choices=[('', _('— vše —'))] + Ticket.PRIORITY_CHOICES,
         required=False, label=_('Priorita'),
     )
+    status_exclude = forms.BooleanField(required=False, widget=forms.HiddenInput)
+    type_exclude = forms.BooleanField(required=False, widget=forms.HiddenInput)
+    area_exclude = forms.BooleanField(required=False, widget=forms.HiddenInput)
+    priority_exclude = forms.BooleanField(required=False, widget=forms.HiddenInput)
     search = forms.CharField(required=False, label=_('Hledat'))
     date_from = forms.DateField(
         required=False, label=_('Vytvořeno od'),
@@ -263,6 +267,9 @@ class TicketFilterForm(forms.Form):
                 required=False, label=_('Firma'),
                 empty_label=_('— vše —'),
             )
+            self.fields['company_exclude'] = forms.BooleanField(
+                required=False, widget=forms.HiddenInput,
+            )
         if user and user.has_role('manager', 'admin', 'requester'):
             from apps.accounts.models import User
             if base_qs is not None:
@@ -278,6 +285,9 @@ class TicketFilterForm(forms.Form):
                 queryset=resolver_qs,
                 required=False, label=_('Řešitel'),
                 empty_label=_('— vše —'),
+            )
+            self.fields['resolver_exclude'] = forms.BooleanField(
+                required=False, widget=forms.HiddenInput,
             )
         if user and (
             user.has_role('manager', 'admin', 'resolver')
@@ -297,4 +307,7 @@ class TicketFilterForm(forms.Form):
                 queryset=requester_qs,
                 required=False, label=_('Žadatel'),
                 empty_label=_('— vše —'),
+            )
+            self.fields['requester_exclude'] = forms.BooleanField(
+                required=False, widget=forms.HiddenInput,
             )

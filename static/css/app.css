@@ -597,10 +597,24 @@ textarea { resize: vertical; min-height: 80px; }
 }
 
 .filter-field { min-width: 110px; }
-.filter-field label { display: block; font-size: 11px; font-weight: 700; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.filter-field label { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
 .filter-field select,
 .filter-field input { padding: 6px 10px; font-size: 13px; }
 .filter-field select { padding-right: 28px; }
+
+/* Negative filter toggle */
+.filter-neg-toggle {
+  display: none; border: none; background: var(--c-border); color: var(--c-text-muted);
+  font-size: 14px; font-weight: 700; width: 18px; height: 18px;
+  border-radius: 3px; cursor: pointer; padding: 0; flex-shrink: 0;
+  align-items: center; justify-content: center;
+}
+.filter-neg-toggle:hover { background: var(--c-text-muted); color: #fff; }
+.filter-neg-toggle .neg-neq { display: none; }
+.filter-exclude .filter-neg-toggle { background: #e67e22; color: #fff; }
+.filter-exclude .filter-neg-toggle .neg-eq { display: none; }
+.filter-exclude .filter-neg-toggle .neg-neq { display: inline; }
+.filter-exclude select { border-left: 3px solid #e67e22; }
 
 /* View toggle */
 .view-toggle {
