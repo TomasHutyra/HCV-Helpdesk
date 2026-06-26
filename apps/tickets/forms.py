@@ -12,6 +12,7 @@ class TicketCreateForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['description'].widget = forms.Textarea(attrs={'rows': 5})
+        self.fields['area'].required = True
         # Správce, admin a řešitel si mohou vybrat firmu
         if user and user.has_role('manager', 'admin', 'resolver'):
             from apps.accounts.models import Company

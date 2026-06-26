@@ -61,6 +61,7 @@
           <option value="{{ area.pk }}" {% if form.area.value|stringformat:"s" == area.pk|stringformat:"s" %}selected{% endif %}>{{ area.name }}</option>
           {% endfor %}
         </select>
+        {% if form.area.errors %}<div class="form-error">{{ form.area.errors.0 }}</div>{% endif %}
       </div>
 
       {% if form.company %}
