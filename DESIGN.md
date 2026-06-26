@@ -108,6 +108,8 @@ HCV_Helpdesk/
 │   │       ├── clear_test_data.py     # Smazání testovacích dat
 │   │       └── create_initial_users.py # Vytvoření počátečních uživatelů
 │   ├── tickets/            # Tikety, komentáře, přílohy, záznamy času, audit log
+│   │   └── management/commands/
+│   │       └── delete_ticket.py       # Smazání konkrétního tiketu (dry-run / --confirm)
 │   ├── notifications/      # E-mailové notifikace, IMAP polling, Celery tasky
 │   │   └── management/commands/
 │   │       └── poll_inbox.py          # Ruční spuštění IMAP pollingu

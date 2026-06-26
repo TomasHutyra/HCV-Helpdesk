@@ -622,3 +622,53 @@ Vytvořeno, Vyřešeno. Správce a administrátor mají navíc sloupec Řešitel
 V detailu požadavku jsou zobrazeny šipky pro přechod na předchozí a
 následující požadavek. Pořadí odpovídá pořadí v přehledu (dle PK).
 Uživatel může přejít pouze na požadavek, ke kterému má přístup.
+
+---
+
+## Správa dat — administrátorské příkazy
+
+Příkazy se spouštějí na produkčním serveru přes Docker:
+
+```bash
+docker compose exec web python manage.py <příkaz> [argumenty]
+```
+
+### Smazání konkrétního tiketu
+
+```bash
+# Dry-run — vypíše tiket a počty navázaných záznamů, nic nesmaže
+python manage.py delete_ticket <id>
+
+# Skutečné smazání (po potvrzení výpisem)
+python manage.py delete_ticket <id> --confirm
+```
+
+Příkaz smaže tiket včetně všech navázaných dat: komentáře, záznamy času,
+přílohy, historii změn a sledující. Určeno pro ruční odmazání testovacích
+nebo chybně zadaných tiketů.
+
+### Smazání všech testovacích dat
+
+```bash
+# Dry-run — zobrazí počty dat, nic nesmaže
+python manage.py clear_test_data
+
+# Skutečné smazání
+python manage.py clear_test_data --confirm
+```
+
+Smaže všechny tikety, uživatele (kromě superuživatelů) a firmy. Určeno
+pro vyčištění prostředí po testování před ostrým spuštěním.
+
+### Vytvoření počátečních uživatelů
+
+```bash
+# Dry-run — zobrazí seznam uživatelů, které by vytvořil
+python manage.py create_initial_users
+
+# Skutečné vytvoření
+python manage.py create_initial_users --confirm
+```
+
+Vytvoří předdefinovanou sadu uživatelů (viz seznam v kódu příkazu)
+s přiřazenými rolemi a firmami.

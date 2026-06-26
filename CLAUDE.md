@@ -39,6 +39,10 @@ docker compose exec web python manage.py shell -c "from apps.accounts.models imp
 docker compose exec web python manage.py clear_test_data
 docker compose exec web python manage.py clear_test_data --confirm
 
+# Smazat konkrétní tiket — dry-run / --confirm
+docker compose exec web python manage.py delete_ticket <id>
+docker compose exec web python manage.py delete_ticket <id> --confirm
+
 # Vytvořit počáteční uživatele — dry-run / --confirm
 docker compose exec web python manage.py create_initial_users
 docker compose exec web python manage.py create_initial_users --confirm
