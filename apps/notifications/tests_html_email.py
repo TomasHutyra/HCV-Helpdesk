@@ -120,6 +120,13 @@ class NewTicketHtmlTest(TestCase):
     def test_contains_reply_token(self):
         self.assertIn(f'[#{self.ticket.pk}#]', self._html())
 
+    def test_contains_requester_name(self):
+        """HTML e-mail nového tiketu obsahuje jméno žadatele."""
+        self.requester.first_name = 'Testovací'
+        self.requester.last_name = 'Žadatel'
+        self.requester.save()
+        self.assertIn('Testovací Žadatel', self._html())
+
 
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
