@@ -113,10 +113,11 @@ _ORIGINAL_MSG_RE = re.compile(r'^-{3,}[^-\r\n]', re.MULTILINE)
 # Nezachytí holou oddělovací čáru "------..." (bez textu).
 
 _OUTLOOK_HEADER_RE = re.compile(
-    r'^(From|Od|De|Van): .+\r?\n(Sent|Odesláno|Envoyé|Verzonden): ',
+    r'^(From|Od|De|Van): [^\r\n]+\r?\n(?:\r?\n)*(Sent|Odesláno|Envoyé|Verzonden): ',
     re.MULTILINE,
 )
-# Zachytí Outlook reply header ve formátu "From: ...\nSent: ..." (EN, CZ, FR, NL).
+# Zachytí Outlook reply header "From: ...\nSent: ..." (EN, CZ, FR, NL).
+# (?:\r?\n)* toleruje prázdné řádky mezi From a Sent (HTML→text konverze je vkládá).
 
 _HTML_DOC_RE = re.compile(r'<(?:!DOCTYPE\s+html|html[\s>])', re.IGNORECASE)
 # Zachytí začátek HTML dokumentu v plain-text těle (Outlook for Mac vkládá HTML zdroj citované zprávy).
