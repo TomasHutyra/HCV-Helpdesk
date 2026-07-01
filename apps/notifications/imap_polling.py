@@ -23,18 +23,39 @@ def _decode_header(value):
     return str(make_header(decode_header(value)))
 
 
+def _html_to_text(html):
+    """Převede HTML na prostý text — odstraní tagy, dekóduje entity."""
+    import html as html_module
+    import re as _re
+    text = _re.sub(r'<br\s*/?>', '\n', html, flags=_re.IGNORECASE)
+    text = _re.sub(r'</p>', '\n', text, flags=_re.IGNORECASE)
+    text = _re.sub(r'<[^>]+>', '', text)
+    return html_module.unescape(text)
+
+
 def _get_body(msg):
-    """Extrahuje textové tělo e-mailu (plain text preferováno)."""
-    body = ''
+    """Extrahuje textové tělo e-mailu (plain text preferováno, HTML jako záloha)."""
+    plain = ''
+    html = ''
     if msg.is_multipart():
         for part in msg.walk():
-            if part.get_content_type() == 'text/plain' and not part.get('Content-Disposition'):
+            disposition = part.get('Content-Disposition', '')
+            if 'attachment' in disposition:
+                continue
+            ct = part.get_content_type()
+            if ct == 'text/plain' and not plain:
                 charset = part.get_content_charset() or 'utf-8'
-                body = part.get_payload(decode=True).decode(charset, errors='replace')
-                break
+                plain = part.get_payload(decode=True).decode(charset, errors='replace')
+            elif ct == 'text/html' and not html:
+                charset = part.get_content_charset() or 'utf-8'
+                html = part.get_payload(decode=True).decode(charset, errors='replace')
     else:
         charset = msg.get_content_charset() or 'utf-8'
-        body = msg.get_payload(decode=True).decode(charset, errors='replace')
+        if msg.get_content_type() == 'text/html':
+            html = msg.get_payload(decode=True).decode(charset, errors='replace')
+        else:
+            plain = msg.get_payload(decode=True).decode(charset, errors='replace')
+    body = plain if plain.strip() else _html_to_text(html)
     return body.strip()
 
 
